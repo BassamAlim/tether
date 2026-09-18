@@ -7,10 +7,12 @@ import bassamalim.tether.core.data.dataSources.room.daos.InteractionsDao
 import bassamalim.tether.core.data.dataSources.room.daos.PeopleDao
 import bassamalim.tether.core.data.dataSources.room.entities.Interaction
 import bassamalim.tether.core.data.dataSources.room.entities.Person
+import bassamalim.tether.core.data.dataSources.room.entities.PersonDetail
 
 @Database(
     entities = [
         Person::class,
+        PersonDetail::class,
         Interaction::class
     ],
     version = 1,

@@ -16,7 +16,7 @@ import bassamalim.tether.core.ui.theme.Pill
 import bassamalim.tether.core.ui.theme.Sizes
 import bassamalim.tether.core.ui.theme.Surface200
 
-/** A monogram, not a photo — Tether never asks your address book for pictures. */
+/** A monogram. Photos are designed but not stored yet, so every avatar is initials for now. */
 @Composable
 fun Avatar(
     initials: String,

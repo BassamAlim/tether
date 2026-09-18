@@ -169,7 +169,7 @@ private fun PersonRow(person: PersonListItem, onClick: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
-                person.tag?.let { TagChip(label = it.name) }
+                person.tag?.let { TagChip(label = it.chipLabel) }
 
                 Text(
                     text = person.cadenceLabel,

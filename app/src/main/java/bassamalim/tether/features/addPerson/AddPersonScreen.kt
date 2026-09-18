@@ -1,10 +1,202 @@
 package bassamalim.tether.features.addPerson
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import bassamalim.tether.core.ui.components.PlaceholderScreen
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import bassamalim.tether.core.enums.CadencePreset
+import bassamalim.tether.core.enums.RelationshipTag
+import bassamalim.tether.core.ui.components.FilterPill
+import bassamalim.tether.core.ui.components.LabeledTextField
+import bassamalim.tether.core.ui.components.SectionLabel
+import bassamalim.tether.core.ui.theme.Accent
+import bassamalim.tether.core.ui.theme.InkFaint
+import bassamalim.tether.core.ui.theme.InkMuted
+import bassamalim.tether.core.ui.theme.Pill
+import bassamalim.tether.core.ui.theme.Sizes
+import bassamalim.tether.core.ui.theme.Spacing
+import bassamalim.tether.core.ui.theme.Surface0
+import bassamalim.tether.core.ui.theme.Surface100
+import bassamalim.tether.core.ui.theme.Surface300
+import bassamalim.tether.core.ui.theme.TetherType
 
-// TODO: build from the "New person" board in the Tether app design.
 @Composable
-fun AddPersonScreen() {
-    PlaceholderScreen(title = "New person", designBoard = "New person")
+fun AddPersonScreen(viewModel: AddPersonViewModel = hiltViewModel()) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    AddPersonScreen(
+        state = state,
+        onNameChange = viewModel::onNameChange,
+        onTagSelect = viewModel::onTagSelect,
+        onCadenceSelect = viewModel::onCadenceSelect,
+        onHowYouMetChange = viewModel::onHowYouMetChange,
+        onCancel = viewModel::onCancel,
+        onSave = viewModel::onSave
+    )
+}
+
+@Composable
+private fun AddPersonScreen(
+    state: AddPersonUiState,
+    onNameChange: (String) -> Unit,
+    onTagSelect: (RelationshipTag) -> Unit,
+    onCadenceSelect: (CadencePreset) -> Unit,
+    onHowYouMetChange: (String) -> Unit,
+    onCancel: () -> Unit,
+    onSave: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Surface0)
+            .verticalScroll(rememberScrollState())
+            .padding(bottom = Spacing.xxl)
+    ) {
+        TopBar(canSave = state.canSave, onCancel = onCancel, onSave = onSave)
+
+        PhotoButton(modifier = Modifier.align(Alignment.CenterHorizontally))
+
+        LabeledTextField(
+            label = "Name",
+            value = state.name,
+            onValueChange = onNameChange,
+            placeholder = "Their name",
+            modifier = Modifier.padding(top = 26.dp, start = Spacing.screen, end = Spacing.screen)
+        )
+
+        Column(Modifier.padding(top = 22.dp, start = Spacing.screen, end = Spacing.screen)) {
+            SectionLabel(text = "Relationship")
+
+            ChipRow(modifier = Modifier.padding(top = 10.dp)) {
+                RelationshipTag.entries.forEach { tag ->
+                    FilterPill(
+                        label = tag.label,
+                        selected = tag == state.tag,
+                        onClick = { onTagSelect(tag) }
+                    )
+                }
+            }
+        }
+
+        Column(Modifier.padding(top = 22.dp, start = Spacing.screen, end = Spacing.screen)) {
+            SectionLabel(text = "Reach out every")
+
+            ChipRow(modifier = Modifier.padding(top = 10.dp)) {
+                CadencePreset.entries.forEach { preset ->
+                    FilterPill(
+                        label = preset.label,
+                        selected = preset == state.cadence,
+                        onClick = { onCadenceSelect(preset) }
+                    )
+                }
+            }
+
+            Text(
+                text = "This is the only field that makes Tether a CRM — it's what the Catch up " +
+                        "screen counts from.",
+                style = TetherType.Caption,
+                color = InkFaint,
+                modifier = Modifier.padding(top = 10.dp)
+            )
+        }
+
+        LabeledTextField(
+            label = "How you met",
+            value = state.howYouMet,
+            onValueChange = onHowYouMetChange,
+            placeholder = "Where, when, through whom",
+            modifier = Modifier.padding(top = 22.dp, start = Spacing.screen, end = Spacing.screen)
+        )
+    }
+}
+
+@Composable
+private fun TopBar(canSave: Boolean, onCancel: () -> Unit, onSave: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = Spacing.screen, start = Spacing.sm, end = Spacing.sm),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "Cancel",
+            style = MaterialTheme.typography.labelMedium,
+            color = InkMuted,
+            modifier = Modifier
+                .clickable(onClick = onCancel)
+                .padding(horizontal = Spacing.md, vertical = Spacing.md)
+        )
+
+        Text(
+            text = "New person",
+            style = MaterialTheme.typography.labelLarge,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.weight(1f)
+        )
+
+        Text(
+            text = "Save",
+            style = MaterialTheme.typography.labelLarge,
+            // Dimmed rather than hidden: you can see what you're one field away from.
+            color = if (canSave) Accent else InkFaint,
+            modifier = Modifier
+                .clickable(enabled = canSave, onClick = onSave)
+                .padding(horizontal = Spacing.md, vertical = Spacing.md)
+        )
+    }
+}
+
+// TODO: photos aren't stored yet — wire this to a picker when Person gets a photo.
+@Composable
+private fun PhotoButton(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .padding(top = Spacing.md)
+            .size(80.dp)
+            .background(color = Surface100, shape = Pill)
+            .border(width = Sizes.border, color = Surface300, shape = Pill),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.Add,
+            contentDescription = "Add a photo",
+            tint = InkFaint,
+            modifier = Modifier.size(24.dp)
+        )
+    }
+}
+
+@Composable
+private fun ChipRow(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    FlowRow(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+        verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+    ) {
+        content()
+    }
 }

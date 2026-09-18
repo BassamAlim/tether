@@ -62,7 +62,7 @@ class PeopleViewModel @Inject constructor(
     private fun TrackedPerson.matches(filter: PeopleFilter) = when (filter) {
         PeopleFilter.ALL -> true
         PeopleFilter.SLIPPING -> isSlipping
-        PeopleFilter.CLOSE -> person.tag == RelationshipTag.CLOSE
+        PeopleFilter.CLOSE -> person.tag == RelationshipTag.CLOSE_FRIEND
         PeopleFilter.WORK -> person.tag == RelationshipTag.WORK
     }
 

@@ -100,6 +100,9 @@ These are decided; don't re-litigate them in code.
   log, and every one-tap write offers undo.
 - **Import is a picker, not a sync.** `READ_CONTACTS` is requested when the button is tapped,
   people are copied once, and Tether never writes back to the address book.
+- **Person details are free-form label/value rows** (`PersonDetail`: "Met", "Works at",
+  "Kids"), not fixed columns — what's worth remembering differs per person. Interaction notes are
+  separate, and search covers names, details and notes.
 - **The nudge is weekly**, not daily — a daily nudge becomes wallpaper within a fortnight.
 - **Lock** is `BiometricPrompt` on cold start and after 60s in the background, with device
   credential as the fallback. It stops someone picking up an unlocked phone; it is not encryption
@@ -107,6 +110,14 @@ These are decided; don't re-litigate them in code.
 
 ## Current state
 
-Skeleton: data layer, DI, navigation, theme and the People screen are real. Every other screen is
+Real: the data layer, DI, navigation, theme, **People** and **New person**. Every other screen is
 a `PlaceholderScreen` naming its design board — replace them one at a time, following the feature
 file layout above.
+
+`observeLockEnabled()` currently defaults to **false** so the app doesn't start on the Lock
+placeholder. Flip it back to `true` when the lock is built (there's a TODO on it).
+
+Not built yet, in the order they're worth doing: Catch up (one-tap log + undo), Person detail and
+the log sheet, Search, Settings, Import, First run, the weekly nudge (WorkManager), the lock
+(BiometricPrompt). Photos are designed but not stored: `Person` has no photo column and the New
+person screen's photo button is inert.

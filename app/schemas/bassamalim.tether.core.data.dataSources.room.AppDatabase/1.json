@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "fdd263bb8e8f03d4c4e42489206c1f4c",
+    "identityHash": "eb93e9a4bd21491d03f67f7102bc97d7",
     "entities": [
       {
         "tableName": "people",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `tag` TEXT, `cadenceDays` INTEGER, `phone` TEXT, `email` TEXT, `birthday` INTEGER, `notes` TEXT NOT NULL, `addedOn` INTEGER NOT NULL, `archived` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `tag` TEXT, `cadenceDays` INTEGER, `phone` TEXT, `addedOn` INTEGER NOT NULL, `archived` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -36,22 +36,6 @@
             "affinity": "TEXT"
           },
           {
-            "fieldPath": "email",
-            "columnName": "email",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "birthday",
-            "columnName": "birthday",
-            "affinity": "INTEGER"
-          },
-          {
-            "fieldPath": "notes",
-            "columnName": "notes",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
             "fieldPath": "addedOn",
             "columnName": "addedOn",
             "affinity": "INTEGER",
@@ -70,6 +54,72 @@
             "id"
           ]
         }
+      },
+      {
+        "tableName": "person_details",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `personId` INTEGER NOT NULL, `label` TEXT NOT NULL, `value` TEXT NOT NULL, `position` INTEGER NOT NULL, FOREIGN KEY(`personId`) REFERENCES `people`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "personId",
+            "columnName": "personId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "label",
+            "columnName": "label",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "value",
+            "columnName": "value",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "position",
+            "columnName": "position",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_person_details_personId",
+            "unique": false,
+            "columnNames": [
+              "personId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_person_details_personId` ON `${TABLE_NAME}` (`personId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "people",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "personId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
       },
       {
         "tableName": "interactions",
@@ -139,7 +189,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'fdd263bb8e8f03d4c4e42489206c1f4c')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'eb93e9a4bd21491d03f67f7102bc97d7')"
     ]
   }
 }

@@ -15,11 +15,8 @@ data class Person(
      * the slipping section, but still appears in People and in search.
      */
     val cadenceDays: Int? = null,
+    /** Only for the message action and for people copied in from contacts. */
     val phone: String? = null,
-    val email: String? = null,
-    val birthday: LocalDate? = null,
-    /** The details you'd be embarrassed to forget. */
-    val notes: String = "",
     /**
      * Someone with no interactions yet counts from the date they were added, so a new person
      * goes overdue on schedule rather than immediately.

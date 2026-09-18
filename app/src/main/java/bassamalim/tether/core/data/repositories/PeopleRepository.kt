@@ -2,6 +2,7 @@ package bassamalim.tether.core.data.repositories
 
 import bassamalim.tether.core.data.dataSources.room.daos.PeopleDao
 import bassamalim.tether.core.data.dataSources.room.entities.Person
+import bassamalim.tether.core.data.dataSources.room.entities.PersonDetail
 import bassamalim.tether.core.data.dataSources.room.relations.PersonWithLastInteraction
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -19,11 +20,16 @@ class PeopleRepository @Inject constructor(
 
     fun observeCount(): Flow<Int> = peopleDao.observeCount()
 
+    fun observeDetails(personId: Long): Flow<List<PersonDetail>> = peopleDao.observeDetails(personId)
+
     fun searchByName(query: String): Flow<List<Person>> = peopleDao.searchByName(query)
 
-    fun searchByNotes(query: String): Flow<List<Person>> = peopleDao.searchByNotes(query)
+    fun searchByDetails(query: String): Flow<List<Person>> = peopleDao.searchByDetails(query)
 
     suspend fun save(person: Person): Long = peopleDao.upsert(person)
+
+    suspend fun create(person: Person, details: List<PersonDetail> = emptyList()): Long =
+        peopleDao.insertWithDetails(person, details)
 
     /** Contacts import copies people in once; it never syncs back. */
     suspend fun saveAll(people: List<Person>) = peopleDao.upsertAll(people)

@@ -46,7 +46,9 @@ class PreferencesRepository @Inject constructor(
         dataStore.edit { it[DEFAULT_CADENCE_DAYS] = days }
     }
 
-    fun observeLockEnabled(): Flow<Boolean> = dataStore.data.map { it[LOCK_ENABLED] ?: true }
+    // TODO: default back to true once the Lock screen is built — until then it would
+    //  start the app on a placeholder with no way past it.
+    fun observeLockEnabled(): Flow<Boolean> = dataStore.data.map { it[LOCK_ENABLED] ?: false }
 
     suspend fun setLockEnabled(enabled: Boolean) {
         dataStore.edit { it[LOCK_ENABLED] = enabled }
@@ -60,7 +62,7 @@ class PreferencesRepository @Inject constructor(
 
         /** 10:00 on the nudge day. */
         private const val DEFAULT_NUDGE_MINUTE = 10 * 60
-        /** Every six weeks: often enough to matter, rare enough not to nag. */
-        private const val DEFAULT_CADENCE = 42
+        /** "Month" — the preset the New person screen preselects. */
+        private const val DEFAULT_CADENCE = 30
     }
 }
