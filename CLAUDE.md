@@ -110,14 +110,14 @@ These are decided; don't re-litigate them in code.
 
 ## Current state
 
-Real: the data layer, DI, navigation, theme, **People** and **New person**. Every other screen is
-a `PlaceholderScreen` naming its design board — replace them one at a time, following the feature
-file layout above.
+Real: the data layer, DI, navigation, theme, **People**, **New person** and **Catch up**
+(including the one-tap log and its undo bar). Every other screen is a `PlaceholderScreen` naming
+its design board — replace them one at a time, following the feature file layout above.
 
 `observeLockEnabled()` currently defaults to **false** so the app doesn't start on the Lock
 placeholder. Flip it back to `true` when the lock is built (there's a TODO on it).
 
-Not built yet, in the order they're worth doing: Catch up (one-tap log + undo), Person detail and
-the log sheet, Search, Settings, Import, First run, the weekly nudge (WorkManager), the lock
-(BiometricPrompt). Photos are designed but not stored: `Person` has no photo column and the New
-person screen's photo button is inert.
+Not built yet, in the order they're worth doing: Person detail and the log sheet, Search,
+Settings, Import, First run, the weekly nudge (WorkManager), the lock (BiometricPrompt). Photos
+are designed but not stored: `Person` has no photo column and the New person screen's photo
+button is inert.
