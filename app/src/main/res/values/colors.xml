@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Tether design tokens. Compose reads core/ui/theme/Color.kt; these exist for the few
+     places only a resource will do, such as the launcher icon and the window background. -->
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <color name="surface_0">#FF0A0A0A</color>
+    <color name="surface_100">#FF141414</color>
+    <color name="surface_200">#FF1E1E1E</color>
+    <color name="surface_300">#FF2A2A2A</color>
+    <color name="ink">#FFFAFAFA</color>
+    <color name="ink_muted">#FFACACAC</color>
+    <color name="ink_faint">#FF888888</color>
+    <color name="accent">#FFD8FF3D</color>
+    <color name="accent_ink">#FF0A0A0A</color>
+    <color name="danger">#FFFF6B6B</color>
 </resources>
