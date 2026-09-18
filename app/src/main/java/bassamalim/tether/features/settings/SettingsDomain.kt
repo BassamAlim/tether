@@ -3,6 +3,7 @@ package bassamalim.tether.features.settings
 import bassamalim.tether.core.data.repositories.InteractionsRepository
 import bassamalim.tether.core.data.repositories.PeopleRepository
 import bassamalim.tether.core.data.repositories.PreferencesRepository
+import bassamalim.tether.core.nudge.NudgeScheduler
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.json.Json
 import java.time.Clock
@@ -15,6 +16,7 @@ class SettingsDomain @Inject constructor(
     private val preferencesRepository: PreferencesRepository,
     private val peopleRepository: PeopleRepository,
     private val interactionsRepository: InteractionsRepository,
+    private val nudgeScheduler: NudgeScheduler,
     private val clock: Clock
 ) {
 
@@ -29,11 +31,16 @@ class SettingsDomain @Inject constructor(
 
     fun observeDefaultCadenceDays(): Flow<Int> = preferencesRepository.observeDefaultCadenceDays()
 
-    suspend fun setNudgeEnabled(enabled: Boolean) = preferencesRepository.setNudgeEnabled(enabled)
+    /** Every change to when the nudge lands re-books the pending one. */
+    suspend fun setNudgeEnabled(enabled: Boolean) {
+        preferencesRepository.setNudgeEnabled(enabled)
+        nudgeScheduler.sync()
+    }
 
     suspend fun setNudgeSchedule(day: DayOfWeek, time: LocalTime) {
         preferencesRepository.setNudgeDay(day)
         preferencesRepository.setNudgeTime(time)
+        nudgeScheduler.sync()
     }
 
     suspend fun setNudgeOnlyWhenOverdue(enabled: Boolean) =

@@ -18,6 +18,7 @@ import bassamalim.tether.core.lock.LockManager
 import bassamalim.tether.core.nav.Navigation
 import bassamalim.tether.core.nav.Navigator
 import bassamalim.tether.core.nav.Screen
+import bassamalim.tether.core.nudge.Nudges
 import bassamalim.tether.core.ui.theme.Surface0
 import bassamalim.tether.core.ui.theme.TetherTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -48,10 +49,24 @@ class Activity : FragmentActivity() {
                 // Nothing about your people is on screen before the start destination is known.
                 Box(Modifier.fillMaxSize().background(Surface0)) {
                     startDestination?.let {
-                        Navigation(navigator = navigator, startDestination = it)
+                        Navigation(navigator = navigator, startDestination = withNudgeTarget(it))
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * A nudge opens the app on Catch up — through the lock if there is one, never around it.
+     */
+    private fun withNudgeTarget(destination: Screen): Screen {
+        val fromNudge = intent?.getBooleanExtra(Nudges.EXTRA_OPEN_CATCH_UP, false) == true
+        if (!fromNudge) return destination
+
+        return when (destination) {
+            is Screen.Lock -> destination.copy(thenCatchUp = true)
+            is Screen.Main -> Screen.Main(showCatchUp = true)
+            else -> destination
         }
     }
 

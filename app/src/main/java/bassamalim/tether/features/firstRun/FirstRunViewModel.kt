@@ -22,7 +22,7 @@ class FirstRunViewModel @Inject constructor(
         peopleRepository.observeCount()
             .filter { it > 0 }
             .onEach {
-                navigator.navigate(Screen.Main) {
+                navigator.navigate(Screen.Main()) {
                     popUpTo(Screen.FirstRun) { inclusive = true }
                 }
             }

@@ -41,7 +41,7 @@ import bassamalim.tether.features.settings.SettingsScreen
  */
 @Composable
 fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
-    var selected by rememberSaveable { mutableStateOf(MainTab.PEOPLE) }
+    var selected by rememberSaveable { mutableStateOf(viewModel.initialTab) }
 
     Scaffold(
         containerColor = Surface0,

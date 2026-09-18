@@ -21,19 +21,20 @@ class LockViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val resumable = savedStateHandle.toRoute<Screen.Lock>().resumable
+    private val route = savedStateHandle.toRoute<Screen.Lock>()
 
     fun onUnlocked() {
         lockManager.onUnlocked()
 
-        if (resumable) {
+        if (route.resumable) {
             navigator.popBackStack()
             return
         }
 
         viewModelScope.launch {
             val destination =
-                if (peopleRepository.observeCount().first() == 0) Screen.FirstRun else Screen.Main
+                if (peopleRepository.observeCount().first() == 0) Screen.FirstRun
+                else Screen.Main(showCatchUp = route.thenCatchUp)
 
             navigator.navigate(destination) {
                 popUpTo(Screen.Lock(resumable = false)) { inclusive = true }

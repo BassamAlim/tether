@@ -34,7 +34,7 @@ class AppViewModel @Inject constructor(
             when {
                 lockEnabled -> Screen.Lock(resumable = false)
                 peopleCount == 0 -> Screen.FirstRun
-                else -> Screen.Main
+                else -> Screen.Main()
             }
         )
     }.stateIn(
