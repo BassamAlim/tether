@@ -24,21 +24,16 @@ class PeopleViewModel @Inject constructor(
     private val navigator: Navigator
 ) : ViewModel() {
 
-    private val query = MutableStateFlow("")
     private val filter = MutableStateFlow(PeopleFilter.ALL)
 
     val uiState: StateFlow<PeopleUiState> = combine(
         domain.observePeople(),
-        query,
         filter
-    ) { people, query, filter ->
-        val visible = people
-            .filter { it.person.name.contains(query, ignoreCase = true) }
-            .filter { it.matches(filter) }
+    ) { people, filter ->
+        val visible = people.filter { it.matches(filter) }
 
         PeopleUiState(
             isLoading = false,
-            query = query,
             filter = filter,
             totalCount = people.size,
             slippingCount = people.count { it.isSlipping },
@@ -51,9 +46,9 @@ class PeopleViewModel @Inject constructor(
         initialValue = PeopleUiState()
     )
 
-    fun onQueryChange(value: String) = query.update { value }
-
     fun onFilterSelect(value: PeopleFilter) = filter.update { value }
+
+    fun onSearchClick() = navigator.navigate(Screen.Search)
 
     fun onPersonClick(id: Long) = navigator.navigate(Screen.Person(id))
 

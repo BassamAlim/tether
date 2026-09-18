@@ -21,6 +21,20 @@ class PreferencesRepository @Inject constructor(
     private val dataStore: DataStore<Preferences>
 ) {
 
+    fun observeNudgeEnabled(): Flow<Boolean> = dataStore.data.map { it[NUDGE_ENABLED] ?: true }
+
+    suspend fun setNudgeEnabled(enabled: Boolean) {
+        dataStore.edit { it[NUDGE_ENABLED] = enabled }
+    }
+
+    /** Off by default: a nudge that says "nobody's due" is still worth reading. */
+    fun observeNudgeOnlyWhenOverdue(): Flow<Boolean> =
+        dataStore.data.map { it[NUDGE_ONLY_WHEN_OVERDUE] ?: false }
+
+    suspend fun setNudgeOnlyWhenOverdue(enabled: Boolean) {
+        dataStore.edit { it[NUDGE_ONLY_WHEN_OVERDUE] = enabled }
+    }
+
     fun observeNudgeDay(): Flow<DayOfWeek> = dataStore.data.map {
         DayOfWeek.of(it[NUDGE_DAY] ?: DayOfWeek.SUNDAY.value)
     }
@@ -53,6 +67,8 @@ class PreferencesRepository @Inject constructor(
     }
 
     companion object {
+        private val NUDGE_ENABLED = booleanPreferencesKey("nudge_enabled")
+        private val NUDGE_ONLY_WHEN_OVERDUE = booleanPreferencesKey("nudge_only_when_overdue")
         private val NUDGE_DAY = intPreferencesKey("nudge_day")
         private val NUDGE_MINUTE_OF_DAY = intPreferencesKey("nudge_minute_of_day")
         private val DEFAULT_CADENCE_DAYS = intPreferencesKey("default_cadence_days")

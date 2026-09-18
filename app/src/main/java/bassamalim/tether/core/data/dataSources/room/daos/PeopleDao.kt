@@ -57,6 +57,10 @@ interface PeopleDao {
     )
     fun searchByDetails(query: String): Flow<List<Person>>
 
+    /** Which detail matched, so a search result can show the line that hit. */
+    @Query("SELECT * FROM person_details WHERE value LIKE '%' || :query || '%'")
+    fun searchDetails(query: String): Flow<List<PersonDetail>>
+
     @Query("SELECT COUNT(*) FROM people WHERE archived = 0")
     fun observeCount(): Flow<Int>
 
@@ -86,7 +90,16 @@ interface PeopleDao {
     @Delete
     suspend fun delete(person: Person)
 
+    @Query("SELECT * FROM people ORDER BY name COLLATE NOCASE")
+    suspend fun getAll(): List<Person>
+
+    @Query("SELECT * FROM person_details ORDER BY personId, position")
+    suspend fun getAllDetails(): List<PersonDetail>
+
     /** Cascades to the person's details and history — the whole record goes. */
     @Query("DELETE FROM people WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    @Query("DELETE FROM people")
+    suspend fun deleteAll()
 }

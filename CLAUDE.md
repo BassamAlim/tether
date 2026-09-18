@@ -114,16 +114,18 @@ These are decided; don't re-litigate them in code.
 
 ## Current state
 
-Real: the data layer, DI, navigation, theme, and the screens **People**, **New person**,
-**Catch up** (one-tap log and undo bar), **Person detail**, **Log a catch-up**, **First run**,
-**From contacts** and **Locked**.
+Every designed screen is built: **People**, **New person**, **Catch up** (one-tap log and undo
+bar), **Person detail**, **Log a catch-up**, **Search**, **Settings**, **First run**, **From
+contacts** and **Locked**.
 
-Still `PlaceholderScreen`s naming their design board: **Search** and **Settings**. Also missing:
-the weekly nudge (WorkManager + notification), per-person reminders (the bell on Person detail
-is deliberately disabled — only the weekly nudge exists), and photos (`Person` has no photo
-column, so the New person screen's photo button is inert).
+Missing: the weekly nudge itself (Settings stores when it should land, but no WorkManager job
+sends it yet), per-person reminders (the bell on Person detail is deliberately disabled), and
+photos (`Person` has no photo column, so the New person screen's photo button is inert).
+Backup export writes JSON; there is no import of that file yet.
 
-Two places the implementation reads differently from the boards, both deliberate: the log sheet
+Three places the implementation reads differently from the boards, all deliberate: the log sheet
 is a `ModalBottomSheet` on its own nav destination, so its scrim covers the app background
-rather than the screen you came from (no M3 `bottomSheet` destination exists to fix this), and
-the contacts picker shows real phone numbers where the mock masks them.
+rather than the screen you came from (no M3 `bottomSheet` destination exists to fix this); the
+contacts picker shows real phone numbers where the mock masks them; and People's search field is
+a button that opens Search rather than filtering the list inline, so there is one search in the
+app rather than two. People's filter chips still filter in place.

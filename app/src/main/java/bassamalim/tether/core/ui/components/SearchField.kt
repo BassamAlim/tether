@@ -1,6 +1,7 @@
 package bassamalim.tether.core.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -24,6 +25,30 @@ import bassamalim.tether.core.ui.theme.Ink
 import bassamalim.tether.core.ui.theme.InkFaint
 import bassamalim.tether.core.ui.theme.Sizes
 import bassamalim.tether.core.ui.theme.Surface200
+
+/** Looks like the field, behaves like a button: tapping it opens the Search screen. */
+@Composable
+fun SearchFieldButton(placeholder: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(Sizes.field)
+            .background(color = Surface200, shape = MaterialTheme.shapes.medium)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.Search,
+            contentDescription = null,
+            tint = InkFaint,
+            modifier = Modifier.size(18.dp)
+        )
+
+        Text(text = placeholder, style = MaterialTheme.typography.bodyMedium, color = InkFaint)
+    }
+}
 
 @Composable
 fun SearchField(

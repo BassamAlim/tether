@@ -21,6 +21,15 @@ fun cadenceLabel(cadenceDays: Int?): String = when {
     else -> every(cadenceDays, "day")
 }
 
+/** How a cadence reads as a settings value: "Weekly", "Every 2 weeks", "Monthly", "Never". */
+fun cadenceValueLabel(cadenceDays: Int?): String = when (cadenceDays) {
+    null -> "Never"
+    7 -> "Weekly"
+    30 -> "Monthly"
+    365 -> "Yearly"
+    else -> cadenceLabel(cadenceDays).replaceFirstChar { it.uppercase() }
+}
+
 /** The adjective form of a cadence: "weekly", "2-week", "monthly", "3-month". */
 fun cadenceAdjective(cadenceDays: Int?): String = when (cadenceDays) {
     null -> "occasional"

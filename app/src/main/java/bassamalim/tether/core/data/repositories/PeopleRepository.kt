@@ -26,6 +26,12 @@ class PeopleRepository @Inject constructor(
 
     fun searchByDetails(query: String): Flow<List<Person>> = peopleDao.searchByDetails(query)
 
+    fun searchDetails(query: String): Flow<List<PersonDetail>> = peopleDao.searchDetails(query)
+
+    suspend fun getAll(): List<Person> = peopleDao.getAll()
+
+    suspend fun getAllDetails(): List<PersonDetail> = peopleDao.getAllDetails()
+
     suspend fun save(person: Person): Long = peopleDao.upsert(person)
 
     suspend fun create(person: Person, details: List<PersonDetail> = emptyList()): Long =
@@ -37,4 +43,7 @@ class PeopleRepository @Inject constructor(
     suspend fun delete(person: Person) = peopleDao.delete(person)
 
     suspend fun delete(id: Long) = peopleDao.deleteById(id)
+
+    /** Deleting people cascades to their details and history — it empties the app. */
+    suspend fun deleteAll() = peopleDao.deleteAll()
 }

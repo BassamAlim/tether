@@ -23,7 +23,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import bassamalim.tether.core.ui.components.Avatar
 import bassamalim.tether.core.ui.components.FilterPill
-import bassamalim.tether.core.ui.components.SearchField
+import bassamalim.tether.core.ui.components.SearchFieldButton
 import bassamalim.tether.core.ui.components.SectionLabel
 import bassamalim.tether.core.ui.components.TagChip
 import bassamalim.tether.core.ui.theme.Attention
@@ -39,7 +39,7 @@ fun PeopleScreen(viewModel: PeopleViewModel = hiltViewModel()) {
 
     PeopleScreen(
         state = state,
-        onQueryChange = viewModel::onQueryChange,
+        onSearchClick = viewModel::onSearchClick,
         onFilterSelect = viewModel::onFilterSelect,
         onPersonClick = viewModel::onPersonClick
     )
@@ -48,7 +48,7 @@ fun PeopleScreen(viewModel: PeopleViewModel = hiltViewModel()) {
 @Composable
 private fun PeopleScreen(
     state: PeopleUiState,
-    onQueryChange: (String) -> Unit,
+    onSearchClick: () -> Unit,
     onFilterSelect: (PeopleFilter) -> Unit,
     onPersonClick: (Long) -> Unit
 ) {
@@ -67,10 +67,9 @@ private fun PeopleScreen(
                     modifier = Modifier.padding(top = Spacing.xs)
                 )
 
-                SearchField(
-                    value = state.query,
-                    onValueChange = onQueryChange,
+                SearchFieldButton(
                     placeholder = "Search people",
+                    onClick = onSearchClick,
                     modifier = Modifier.padding(top = Spacing.lg)
                 )
             }
@@ -132,9 +131,7 @@ private fun PeopleScreen(
         if (state.isEmpty) {
             item {
                 Text(
-                    text =
-                        if (state.query.isBlank()) "Nobody here yet."
-                        else "No one matches \"${state.query}\".",
+                    text = "Nobody here yet.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = InkFaint,
                     modifier = Modifier.padding(Spacing.xxl)

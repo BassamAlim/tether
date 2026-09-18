@@ -22,6 +22,9 @@ interface InteractionsDao {
     )
     fun searchNotes(query: String): Flow<List<Interaction>>
 
+    @Query("SELECT * FROM interactions ORDER BY personId, occurredOn")
+    suspend fun getAll(): List<Interaction>
+
     @Insert
     suspend fun insert(interaction: Interaction): Long
 

@@ -37,6 +37,8 @@ android {
     }
     buildFeatures {
         compose = true
+        // Settings shows the version number.
+        buildConfig = true
     }
 }
 
@@ -69,7 +71,9 @@ dependencies {
 
     implementation(libs.hilt.android)
     implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.hilt.work)
     ksp(libs.hilt.android.compiler)
+    ksp(libs.androidx.hilt.compiler)
 
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)

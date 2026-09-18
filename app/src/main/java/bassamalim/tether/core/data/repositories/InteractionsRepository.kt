@@ -28,6 +28,8 @@ class InteractionsRepository @Inject constructor(
         Interaction(personId = personId, type = type, occurredOn = occurredOn, note = note)
     )
 
+    suspend fun getAll(): List<Interaction> = interactionsDao.getAll()
+
     suspend fun undo(interactionId: Long) {
         interactionsDao.get(interactionId)?.let { interactionsDao.delete(it) }
     }

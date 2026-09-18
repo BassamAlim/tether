@@ -4,7 +4,6 @@ import bassamalim.tether.core.enums.RelationshipTag
 
 data class PeopleUiState(
     val isLoading: Boolean = true,
-    val query: String = "",
     val filter: PeopleFilter = PeopleFilter.ALL,
     val totalCount: Int = 0,
     val slippingCount: Int = 0,
