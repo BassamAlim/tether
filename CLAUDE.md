@@ -103,7 +103,11 @@ These are decided; don't re-litigate them in code.
 - **Person details are free-form label/value rows** (`PersonDetail`: "Met", "Works at",
   "Kids"), not fixed columns — what's worth remembering differs per person. Interaction notes are
   separate, and search covers names, details and notes.
-- **The nudge is weekly**, not daily — a daily nudge becomes wallpaper within a fortnight.
+- **The nudge is weekly**, not daily — a daily nudge becomes wallpaper within a fortnight. It
+  names people rather than counting them (`core/nudge/NudgeCopy.kt`), offers "Tomorrow" so
+  dismissing isn't the only way out, and opens the app on Catch up — through the lock if one is
+  set, never around it. It is scheduled as self-rescheduling one-time work rather than periodic
+  work, because a periodic job's flex window drifts off the hour the user chose.
 - **Lock** is `BiometricPrompt` on cold start and after 60s in the background, with device
   credential as the fallback. It stops someone picking up an unlocked phone; it is not encryption
   at rest, and the UI should not imply otherwise. The rule lives in `core/lock/LockManager`
@@ -118,10 +122,13 @@ Every designed screen is built: **People**, **New person**, **Catch up** (one-ta
 bar), **Person detail**, **Log a catch-up**, **Search**, **Settings**, **First run**, **From
 contacts** and **Locked**.
 
-Missing: the weekly nudge itself (Settings stores when it should land, but no WorkManager job
-sends it yet), per-person reminders (the bell on Person detail is deliberately disabled), and
-photos (`Person` has no photo column, so the New person screen's photo button is inert).
-Backup export writes JSON; there is no import of that file yet.
+Missing: per-person reminders (the bell on Person detail is deliberately disabled), and photos
+(`Person` has no photo column, so the New person screen's photo button is inert). Backup export
+writes JSON; there is no import of that file yet.
+
+The weekly nudge is built: `App` supplies Hilt's `HiltWorkerFactory` to WorkManager (so the
+manifest removes `WorkManagerInitializer`), `NudgeScheduler.sync()` runs on every launch and
+whenever the nudge settings change, and `NudgeActionReceiver` handles "Tomorrow".
 
 Three places the implementation reads differently from the boards, all deliberate: the log sheet
 is a `ModalBottomSheet` on its own nav destination, so its scrim covers the app background
