@@ -36,5 +36,20 @@ class TrackedPeople @Inject constructor(
         }
     }
 
+    fun observe(id: Long): Flow<TrackedPerson?> = peopleRepository.observe(id).map { row ->
+        row?.let {
+            TrackedPerson(
+                person = it.person,
+                lastInteractionOn = it.lastInteractionOn,
+                dueState = dueState(
+                    cadenceDays = it.person.cadenceDays,
+                    lastInteractionOn = it.lastInteractionOn,
+                    addedOn = it.person.addedOn,
+                    today = today()
+                )
+            )
+        }
+    }
+
     fun today(): LocalDate = LocalDate.now(clock)
 }

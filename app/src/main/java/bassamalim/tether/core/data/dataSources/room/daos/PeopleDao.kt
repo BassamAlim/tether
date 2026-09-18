@@ -85,4 +85,8 @@ interface PeopleDao {
 
     @Delete
     suspend fun delete(person: Person)
+
+    /** Cascades to the person's details and history — the whole record goes. */
+    @Query("DELETE FROM people WHERE id = :id")
+    suspend fun deleteById(id: Long)
 }

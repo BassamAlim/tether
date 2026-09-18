@@ -106,18 +106,24 @@ These are decided; don't re-litigate them in code.
 - **The nudge is weekly**, not daily — a daily nudge becomes wallpaper within a fortnight.
 - **Lock** is `BiometricPrompt` on cold start and after 60s in the background, with device
   credential as the fallback. It stops someone picking up an unlocked phone; it is not encryption
-  at rest, and the UI should not imply otherwise.
+  at rest, and the UI should not imply otherwise. The rule lives in `core/lock/LockManager`
+  (monotonic clock, so changing the device time can't skip the grace); `Activity` reports
+  `onStart`/`onStop` to it and is a `FragmentActivity` because that's what `BiometricPrompt`
+  attaches to. A phone with no screen lock at all opens straight through — you can never lock
+  yourself out.
 
 ## Current state
 
-Real: the data layer, DI, navigation, theme, **People**, **New person** and **Catch up**
-(including the one-tap log and its undo bar). Every other screen is a `PlaceholderScreen` naming
-its design board — replace them one at a time, following the feature file layout above.
+Real: the data layer, DI, navigation, theme, and the screens **People**, **New person**,
+**Catch up** (one-tap log and undo bar), **Person detail**, **Log a catch-up**, **First run**,
+**From contacts** and **Locked**.
 
-`observeLockEnabled()` currently defaults to **false** so the app doesn't start on the Lock
-placeholder. Flip it back to `true` when the lock is built (there's a TODO on it).
+Still `PlaceholderScreen`s naming their design board: **Search** and **Settings**. Also missing:
+the weekly nudge (WorkManager + notification), per-person reminders (the bell on Person detail
+is deliberately disabled — only the weekly nudge exists), and photos (`Person` has no photo
+column, so the New person screen's photo button is inert).
 
-Not built yet, in the order they're worth doing: Person detail and the log sheet, Search,
-Settings, Import, First run, the weekly nudge (WorkManager), the lock (BiometricPrompt). Photos
-are designed but not stored: `Person` has no photo column and the New person screen's photo
-button is inert.
+Two places the implementation reads differently from the boards, both deliberate: the log sheet
+is a `ModalBottomSheet` on its own nav destination, so its scrim covers the app background
+rather than the screen you came from (no M3 `bottomSheet` destination exists to fix this), and
+the contacts picker shows real phone numbers where the mock masks them.

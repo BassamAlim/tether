@@ -35,4 +35,6 @@ class PeopleRepository @Inject constructor(
     suspend fun saveAll(people: List<Person>) = peopleDao.upsertAll(people)
 
     suspend fun delete(person: Person) = peopleDao.delete(person)
+
+    suspend fun delete(id: Long) = peopleDao.deleteById(id)
 }

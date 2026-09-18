@@ -46,9 +46,7 @@ class PreferencesRepository @Inject constructor(
         dataStore.edit { it[DEFAULT_CADENCE_DAYS] = days }
     }
 
-    // TODO: default back to true once the Lock screen is built — until then it would
-    //  start the app on a placeholder with no way past it.
-    fun observeLockEnabled(): Flow<Boolean> = dataStore.data.map { it[LOCK_ENABLED] ?: false }
+    fun observeLockEnabled(): Flow<Boolean> = dataStore.data.map { it[LOCK_ENABLED] ?: true }
 
     suspend fun setLockEnabled(enabled: Boolean) {
         dataStore.edit { it[LOCK_ENABLED] = enabled }

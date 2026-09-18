@@ -13,7 +13,11 @@ sealed interface Screen {
 
     @Serializable data object FirstRun : Screen
 
-    @Serializable data object Lock : Screen
+    /**
+     * [resumable] is true when the lock was raised over a running session, so unlocking returns
+     * you where you were; false on a cold start, where it opens the app instead.
+     */
+    @Serializable data class Lock(val resumable: Boolean = false) : Screen
 
     @Serializable data class Person(val id: Long) : Screen
 
