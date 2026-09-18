@@ -1,5 +1,8 @@
 package bassamalim.tether.features.settings
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -34,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -60,6 +64,10 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
+
+    val notificationsLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* Denied only means the nudge stays silent; the setting is still the user's answer. */ }
 
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json")
@@ -93,7 +101,20 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
         SettingsContent(
             state = state,
             modifier = Modifier.padding(innerPadding),
-            onNudgeEnabledChange = viewModel::onNudgeEnabledChange,
+            onNudgeEnabledChange = { enabled ->
+                viewModel.onNudgeEnabledChange(enabled)
+
+                val needsPermission = enabled &&
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                        ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.POST_NOTIFICATIONS
+                        ) != PackageManager.PERMISSION_GRANTED
+
+                if (needsPermission) {
+                    notificationsLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            },
             onScheduleClick = viewModel::onScheduleClick,
             onNudgeOnlyWhenOverdueChange = viewModel::onNudgeOnlyWhenOverdueChange,
             onCadenceClick = viewModel::onCadenceClick,

@@ -20,7 +20,7 @@ import bassamalim.tether.features.person.PersonScreen
 import bassamalim.tether.features.search.SearchScreen
 
 @Composable
-fun Navigation(navigator: Navigator, startDestination: Screen = Screen.Main) {
+fun Navigation(navigator: Navigator, startDestination: Screen = Screen.Main()) {
     val navController = rememberNavController()
 
     LaunchedEffect(navController) {
