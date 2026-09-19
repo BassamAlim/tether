@@ -30,8 +30,18 @@ sealed interface Screen {
 
     @Serializable data object AddPerson : Screen
 
-    /** The log sheet, opened over a person. */
-    @Serializable data class LogInteraction(val personId: Long) : Screen
+    /**
+     * The log sheet, opened over a person. [interactionId] is 0 for a new catch-up and the
+     * row's id when an existing one is being corrected — the same sentinel the entity uses for
+     * "not inserted yet", since Room's ids start at 1.
+     */
+    @Serializable data class LogInteraction(
+        val personId: Long,
+        val interactionId: Long = 0
+    ) : Screen
+
+    /** The picker that links this person to someone else in Tether. */
+    @Serializable data class Connect(val personId: Long) : Screen
 
     @Serializable data object Search : Screen
 

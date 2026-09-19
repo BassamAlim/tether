@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.room.Room
 import bassamalim.tether.core.data.dataSources.room.AppDatabase
+import bassamalim.tether.core.data.dataSources.room.MIGRATIONS
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -29,13 +30,19 @@ object DataSourceModule {
 
     @Provides @Singleton
     fun provideAppDatabase(application: Application): AppDatabase =
-        Room.databaseBuilder(application, AppDatabase::class.java, "tether.db").build()
+        Room.databaseBuilder(application, AppDatabase::class.java, "tether.db")
+            // The database is the archive; a schema change migrates it, never rebuilds it.
+            .addMigrations(*MIGRATIONS)
+            .build()
 
     @Provides @Singleton
     fun providePeopleDao(database: AppDatabase) = database.peopleDao()
 
     @Provides @Singleton
     fun provideInteractionsDao(database: AppDatabase) = database.interactionsDao()
+
+    @Provides @Singleton
+    fun provideConnectionsDao(database: AppDatabase) = database.connectionsDao()
 
     @Provides @Singleton
     fun providePreferencesDataStore(application: Application): DataStore<Preferences> =

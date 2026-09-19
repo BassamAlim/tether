@@ -102,8 +102,16 @@ These are decided; don't re-litigate them in code.
   interaction's own date, not from when Save was tapped. Someone with no interactions counts from
   the day they were added. Cadence "Never" (null `cadenceDays`) keeps a person out of Catch up
   and the slipping section, but still in People and search. Implemented in `core/domain/DueState.kt`.
-- **History is append-only.** You log, you don't curate; deletion exists only to undo a one-tap
-  log, and every one-tap write offers undo.
+- **History is yours to correct.** Tapping an entry on Person detail reopens the log sheet on
+  that row (`Screen.LogInteraction(personId, interactionId)`, 0 meaning "a new one") and saving
+  rewrites it in place, id and all, so a fixed typo or a wrong date doesn't become a second
+  catch-up — and moving the date moves the clock with it. Deleting one is offered in two
+  visible places, never as a gesture: the three-dots menu on the entry, and a Delete button at
+  the bottom of the sheet when it's editing. Either way it goes through with no dialog and an
+  undo bar instead. `InteractionsRepository.delete` announces the removed row on a `deletions`
+  flow, which is how Person detail can raise the bar for a delete tapped on the sheet that was
+  covering it, and undo re-inserts that row with its own id rather than logging a new one.
+  **Every destructive write offers undo** — the one-tap log on Catch up, and this.
 - **Import is a picker, not a sync.** `READ_CONTACTS` is requested when the button is tapped,
   people are copied once, and Tether never writes back to the address book.
 - **The message button opens WhatsApp**, not SMS: it hands WhatsApp the raw number first (so
@@ -116,9 +124,23 @@ These are decided; don't re-litigate them in code.
 - **One relationship tag per person** (`RelationshipTag`), chosen on New person and changeable
   later by tapping the chip on Person detail. The design offers five; `UNIVERSITY` is a sixth,
   added on request. People's filter chips stay as designed (All / Slipping / Close / Work).
+- **Connections are one undirected edge with one shared label.** Who knows who is a row in
+  `connections`, stored with the smaller id in `personAId` and a unique index over the pair, so
+  connecting A to B and B to A is the same row. The label is free text written to read the same
+  from either end ("Siblings", "Work together at Careem") rather than one word per direction —
+  a single sentence to keep true instead of two that drift apart. Removing a connection forgets
+  only the link; deleting a person cascades theirs away. Connections link people already in
+  Tether; there is no such thing as a connection to a name that isn't a person.
 - **Person details are free-form label/value rows** (`PersonDetail`: "Met", "Works at",
   "Kids"), not fixed columns — what's worth remembering differs per person. Interaction notes are
-  separate, and search covers names, details and notes.
+  separate, and search covers names, details, notes and where a catch-up happened.
+- **A catch-up records where it happened and who reached out** — `Interaction.location`, free
+  text and blank when unasked, and `Interaction.initiatedBy` (`Initiator`: ME / THEM, null when
+  unasked or when neither did — you ran into each other). The log sheet offers "Where" as a
+  field and "Who reached out" as two pills that tap off again; Person detail's history joins
+  them into one line under the title ("They reached out · Blue Tokai"). Both are optional: a
+  catch-up with neither still resets the clock, and the one-tap log on Catch up stays one tap,
+  so it records neither.
 - **The nudge is weekly**, not daily — a daily nudge becomes wallpaper within a fortnight. It
   names people rather than counting them (`core/nudge/NudgeCopy.kt`), offers "Tomorrow" so
   dismissing isn't the only way out, and opens the app on Catch up — through the lock if one is
@@ -138,14 +160,20 @@ Every designed screen is built: **People**, **New person**, **Catch up** (one-ta
 bar), **Person detail**, **Log a catch-up**, **Search**, **Settings**, **First run**, **From
 contacts** and **Locked**.
 
+Connections are built: Person detail carries a **Connections** section under Details — tapping a
+row walks to that person, the button on it edits or removes the link — and the **Connect** screen
+(`features/connect`, `Screen.Connect`) picks the other person and asks for the label.
+
 Relationship and cadence can both be changed from Person detail by tapping the chip or the
 cadence line. Name, phone and details are still set-once at creation, and New person collects
 no phone number at all, so the WhatsApp button only lights up for people brought in from
-contacts. An edit flow for the rest is the obvious next gap.
+contacts. An edit flow for the rest is the obvious next gap; logged catch-ups can already be
+edited by tapping them in the history and deleted from the menu on the entry or the sheet.
 
 Missing: per-person reminders (the bell on Person detail is deliberately disabled), and photos
 (`Person` has no photo column, so the New person screen's photo button is inert). Backup export
-writes JSON; there is no import of that file yet.
+writes JSON (format 3, connections included as name pairs so the file reads without Tether);
+there is no import of that file yet.
 
 The weekly nudge is built: `App` supplies Hilt's `HiltWorkerFactory` to WorkManager (so the
 manifest removes `WorkManagerInitializer`), `NudgeScheduler.sync()` runs on every launch and
@@ -157,6 +185,9 @@ The launcher icon comes from the design's own app-icon asset: a 108x108 tile wit
 land at that same 44% on screen; copying the asset's 0.75 renders the mark half again too
 large. Background is surface-0 full bleed (the launcher mask supplies the corners), plus a
 monochrome layer for themed icons. The same mark is the notification's small icon.
+
+Connections have no board — the design predates them — so Connect follows New person's shape
+(Cancel / title / lime Save, then fields) and the Connections rows follow People's.
 
 Three places the implementation reads differently from the boards, all deliberate: the log sheet
 is a `ModalBottomSheet` on its own nav destination, so its scrim covers the app background

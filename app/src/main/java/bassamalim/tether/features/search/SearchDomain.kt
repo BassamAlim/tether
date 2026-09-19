@@ -14,7 +14,7 @@ import javax.inject.Inject
 
 /**
  * Searching your own notes is the feature that pays off in year three: you won't remember the
- * name of the person who left Careem, you'll remember Careem.
+ * name of the person who left Careem, you'll remember Careem — or the cafe you were sitting in.
  *
  * Name matches and note matches answer different questions, so they come back apart.
  */
@@ -30,7 +30,7 @@ class SearchDomain @Inject constructor(
         return combine(
             trackedPeople.observe(),
             peopleRepository.searchDetails(query),
-            interactionsRepository.searchNotes(query)
+            interactionsRepository.search(query)
         ) { people, details, notes ->
             val byId = people.associateBy { it.person.id }
             val detailsByPerson = details.groupBy { it.personId }

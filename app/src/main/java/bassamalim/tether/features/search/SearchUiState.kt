@@ -23,7 +23,7 @@ data class NoteResult(
     val personId: Long,
     val personName: String,
     val initials: String,
-    /** "Coffee · 7w ago". */
+    /** "Coffee · Blue Tokai · 7w ago". */
     val meta: String,
     val note: String
 )

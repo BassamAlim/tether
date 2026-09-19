@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
@@ -27,9 +28,14 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,6 +43,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
@@ -44,8 +51,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import bassamalim.tether.core.enums.CadencePreset
 import bassamalim.tether.core.enums.RelationshipTag
+import bassamalim.tether.core.ui.components.Avatar
 import bassamalim.tether.core.ui.components.FilterPill
+import bassamalim.tether.core.ui.components.LabeledTextField
 import bassamalim.tether.core.ui.components.SectionLabel
+import bassamalim.tether.core.ui.components.UndoSnackbar
 import bassamalim.tether.core.utils.internationalDigits
 import bassamalim.tether.core.ui.theme.Accent
 import bassamalim.tether.core.ui.theme.AccentInk
@@ -66,13 +76,39 @@ import bassamalim.tether.core.ui.theme.TetherType
 import bassamalim.tether.R
 import androidx.compose.ui.res.painterResource
 
+private const val UNDO = "UNDO"
+
 @Composable
 fun PersonScreen(viewModel: PersonViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is PersonEvent.HistoryDeleted -> {
+                    // Deleting two in a row shouldn't leave the first bar offering back a row
+                    // that's already been offered.
+                    snackbarHostState.currentSnackbarData?.dismiss()
+
+                    val result = snackbarHostState.showSnackbar(
+                        message = "Deleted that catch-up",
+                        actionLabel = UNDO,
+                        withDismissAction = false
+                    )
+
+                    if (result == SnackbarResult.ActionPerformed) {
+                        viewModel.onUndoHistoryDelete(event.interaction)
+                    }
+                }
+            }
+        }
+    }
 
     PersonScreen(
         state = state,
+        snackbarHostState = snackbarHostState,
         onBack = viewModel::onBack,
         onTagClick = viewModel::onTagClick,
         onTagDismiss = viewModel::onTagDismiss,
@@ -82,6 +118,17 @@ fun PersonScreen(viewModel: PersonViewModel = hiltViewModel()) {
         onCadenceSelect = viewModel::onCadenceSelect,
         onLogCatchUp = viewModel::onLogCatchUp,
         onMessage = { state.phone?.let { context.openWhatsApp(it) } },
+        onHistoryClick = viewModel::onHistoryClick,
+        onHistoryMenuOpen = viewModel::onHistoryMenuOpen,
+        onHistoryMenuDismiss = viewModel::onHistoryMenuDismiss,
+        onHistoryDelete = viewModel::onHistoryDelete,
+        onAddConnection = viewModel::onAddConnection,
+        onConnectionClick = viewModel::onConnectionClick,
+        onConnectionEdit = viewModel::onConnectionEdit,
+        onConnectionLabelChange = viewModel::onConnectionLabelChange,
+        onConnectionEditDismiss = viewModel::onConnectionEditDismiss,
+        onConnectionLabelSave = viewModel::onConnectionLabelSave,
+        onDisconnect = viewModel::onDisconnect,
         onMenuOpen = viewModel::onMenuOpen,
         onMenuDismiss = viewModel::onMenuDismiss,
         onDeleteClick = viewModel::onDeleteClick,
@@ -117,6 +164,7 @@ private const val WHATSAPP = "com.whatsapp"
 @Composable
 private fun PersonScreen(
     state: PersonUiState,
+    snackbarHostState: SnackbarHostState,
     onBack: () -> Unit,
     onTagClick: () -> Unit,
     onTagDismiss: () -> Unit,
@@ -126,61 +174,99 @@ private fun PersonScreen(
     onCadenceSelect: (CadencePreset) -> Unit,
     onLogCatchUp: () -> Unit,
     onMessage: () -> Unit,
+    onHistoryClick: (Long) -> Unit,
+    onHistoryMenuOpen: (Long) -> Unit,
+    onHistoryMenuDismiss: () -> Unit,
+    onHistoryDelete: (Long) -> Unit,
+    onAddConnection: () -> Unit,
+    onConnectionClick: (Long) -> Unit,
+    onConnectionEdit: (ConnectionEntry) -> Unit,
+    onConnectionLabelChange: (String) -> Unit,
+    onConnectionEditDismiss: () -> Unit,
+    onConnectionLabelSave: () -> Unit,
+    onDisconnect: () -> Unit,
     onMenuOpen: () -> Unit,
     onMenuDismiss: () -> Unit,
     onDeleteClick: () -> Unit,
     onDeleteDismiss: () -> Unit,
     onDeleteConfirm: () -> Unit
 ) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Surface0),
-        contentPadding = PaddingValues(bottom = Spacing.xxl)
-    ) {
-        item {
-            TopBar(
-                isMenuOpen = state.isMenuOpen,
-                onBack = onBack,
-                onMenuOpen = onMenuOpen,
-                onMenuDismiss = onMenuDismiss,
-                onDeleteClick = onDeleteClick
-            )
-        }
-
-        item {
-            Identity(state = state, onTagClick = onTagClick, onCadenceClick = onCadenceClick)
-        }
-
-        item {
-            Actions(
-                canMessage = state.canMessage,
-                onLogCatchUp = onLogCatchUp,
-                onMessage = onMessage
-            )
-        }
-
-        if (state.details.isNotEmpty()) {
-            item { Header("Details") }
-
-            item { DetailsCard(details = state.details) }
-        }
-
-        item { Header("History") }
-
-        if (state.history.isEmpty()) {
+    Box(Modifier.fillMaxSize().background(Surface0)) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = Spacing.xxl)
+        ) {
             item {
-                Text(
-                    text = "Nothing logged yet. The first catch-up you log starts the record.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = InkFaint,
-                    modifier = Modifier.padding(horizontal = Spacing.screen)
+                TopBar(
+                    isMenuOpen = state.isMenuOpen,
+                    onBack = onBack,
+                    onMenuOpen = onMenuOpen,
+                    onMenuDismiss = onMenuDismiss,
+                    onDeleteClick = onDeleteClick
+                )
+            }
+
+            item {
+                Identity(state = state, onTagClick = onTagClick, onCadenceClick = onCadenceClick)
+            }
+
+            item {
+                Actions(
+                    canMessage = state.canMessage,
+                    onLogCatchUp = onLogCatchUp,
+                    onMessage = onMessage
+                )
+            }
+
+            if (state.details.isNotEmpty()) {
+                item { Header("Details") }
+
+                item { DetailsCard(details = state.details) }
+            }
+
+            item { Header("Connections") }
+
+            items(state.connections, key = { it.connectionId }) { connection ->
+                ConnectionRow(
+                    connection = connection,
+                    onClick = { onConnectionClick(connection.personId) },
+                    onEdit = { onConnectionEdit(connection) }
+                )
+            }
+
+            item { AddConnectionRow(onClick = onAddConnection) }
+
+            item { Header("History") }
+
+            if (state.history.isEmpty()) {
+                item {
+                    Text(
+                        text = "Nothing logged yet. The first catch-up you log starts the record.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkFaint,
+                        modifier = Modifier.padding(horizontal = Spacing.screen)
+                    )
+                }
+            }
+
+            itemsIndexed(state.history, key = { _, entry -> entry.id }) { index, entry ->
+                HistoryRow(
+                    entry = entry,
+                    isFirst = index == 0,
+                    isLast = index == state.history.lastIndex,
+                    onClick = { onHistoryClick(entry.id) },
+                    onMenuOpen = { onHistoryMenuOpen(entry.id) },
+                    onMenuDismiss = onHistoryMenuDismiss,
+                    onDelete = { onHistoryDelete(entry.id) }
                 )
             }
         }
 
-        itemsIndexed(state.history, key = { _, entry -> entry.id }) { index, entry ->
-            HistoryRow(entry = entry, isFirst = index == 0, isLast = index == state.history.lastIndex)
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) { data ->
+            UndoSnackbar(data, actionLabel = UNDO)
         }
     }
 
@@ -197,6 +283,16 @@ private fun PersonScreen(
             selected = state.cadence,
             onDismiss = onCadenceDismiss,
             onSelect = onCadenceSelect
+        )
+    }
+
+    state.editingConnection?.let { editing ->
+        ConnectionDialog(
+            editing = editing,
+            onLabelChange = onConnectionLabelChange,
+            onDismiss = onConnectionEditDismiss,
+            onSave = onConnectionLabelSave,
+            onRemove = onDisconnect
         )
     }
 
@@ -436,12 +532,145 @@ private fun DetailsCard(details: List<DetailRow>) {
     }
 }
 
+/**
+ * Someone this person knows. Tapping the row walks the link; the label is edited from the
+ * button, so a tap never means two things at once.
+ */
 @Composable
-private fun HistoryRow(entry: HistoryEntry, isFirst: Boolean, isLast: Boolean) {
+private fun ConnectionRow(
+    connection: ConnectionEntry,
+    onClick: () -> Unit,
+    onEdit: () -> Unit
+) {
     Row(
         modifier = Modifier
-            .padding(horizontal = Spacing.screen)
+            .padding(horizontal = Spacing.md, vertical = Spacing.xxs)
             .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .clickable(onClick = onClick)
+            .padding(start = Spacing.sm, top = Spacing.sm, bottom = Spacing.sm),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+    ) {
+        Avatar(initials = connection.initials)
+
+        Column(Modifier.weight(1f)) {
+            Text(text = connection.name, style = MaterialTheme.typography.titleMedium)
+
+            Text(
+                text = connection.subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = InkFaint,
+                modifier = Modifier.padding(top = 3.dp)
+            )
+        }
+
+        CircleIconButton(onClick = onEdit) {
+            Icon(
+                painter = painterResource(R.drawable.ic_more),
+                contentDescription = "Edit connection with ${connection.name}",
+                tint = InkFaint,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun AddConnectionRow(onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .padding(horizontal = Spacing.md, vertical = Spacing.xxs)
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .clickable(onClick = onClick)
+            .padding(start = Spacing.sm, top = Spacing.sm, bottom = Spacing.sm),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(Sizes.avatar)
+                .background(color = Surface100, shape = Pill),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_add),
+                contentDescription = null,
+                tint = InkFaint,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+
+        Text(
+            text = "Add a connection",
+            style = MaterialTheme.typography.bodyMedium,
+            color = InkMuted
+        )
+    }
+}
+
+@Composable
+private fun ConnectionDialog(
+    editing: ConnectionEdit,
+    onLabelChange: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onSave: () -> Unit,
+    onRemove: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Surface100,
+        title = { Text(text = editing.name, style = MaterialTheme.typography.titleMedium) },
+        text = {
+            Column {
+                LabeledTextField(
+                    label = "How they know each other",
+                    value = editing.label,
+                    onValueChange = onLabelChange,
+                    placeholder = "Siblings, worked together, met at…"
+                )
+
+                Text(
+                    // Removing the link forgets nothing else: both people stay, with their
+                    // details and their history.
+                    text = "Removing only forgets that they know each other.",
+                    style = TetherType.Caption,
+                    color = InkFaint,
+                    modifier = Modifier.padding(top = Spacing.md)
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onSave) {
+                Text(text = "Save", style = MaterialTheme.typography.labelLarge, color = Accent)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onRemove) {
+                Text(text = "Remove", style = MaterialTheme.typography.labelLarge, color = Danger)
+            }
+        }
+    )
+}
+
+@Composable
+private fun HistoryRow(
+    entry: HistoryEntry,
+    isFirst: Boolean,
+    isLast: Boolean,
+    onClick: () -> Unit,
+    onMenuOpen: () -> Unit,
+    onMenuDismiss: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            // The row opens the entry for correcting; everything you can do to it is also on
+            // the menu, so nothing about this row depends on knowing a gesture.
+            .clickable(onClick = onClick)
+            .padding(horizontal = Spacing.screen)
             .height(IntrinsicSize.Min),
         horizontalArrangement = Arrangement.spacedBy(Spacing.md)
     ) {
@@ -486,6 +715,27 @@ private fun HistoryRow(entry: HistoryEntry, isFirst: Boolean, isLast: Boolean) {
                 )
 
                 Text(text = entry.timeLabel, style = TetherType.Timestamp, color = InkFaint)
+
+                HistoryMenu(
+                    isOpen = entry.isMenuOpen,
+                    onOpen = onMenuOpen,
+                    onDismiss = onMenuDismiss,
+                    onEdit = onClick,
+                    onDelete = onDelete
+                )
+            }
+
+            // Who and where sit on their own line, in the timestamp's voice: they're
+            // circumstances of the catch-up, not part of what was said.
+            entry.meta?.let { meta ->
+                Text(
+                    text = meta,
+                    style = TetherType.Timestamp,
+                    color = InkFaint,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = Spacing.xxs)
+                )
             }
 
             entry.note?.let { note ->
@@ -496,6 +746,55 @@ private fun HistoryRow(entry: HistoryEntry, isFirst: Boolean, isLast: Boolean) {
                     modifier = Modifier.padding(top = Spacing.xs)
                 )
             }
+        }
+    }
+}
+
+/** The entry's own options: the same two things the row and the sheet offer, written down. */
+@Composable
+private fun HistoryMenu(
+    isOpen: Boolean,
+    onOpen: () -> Unit,
+    onDismiss: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Box {
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .clip(Pill)
+                .clickable(onClick = onOpen),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_more),
+                contentDescription = "Catch-up options",
+                tint = InkFaint,
+                modifier = Modifier.size(16.dp)
+            )
+        }
+
+        DropdownMenu(
+            expanded = isOpen,
+            onDismissRequest = onDismiss,
+            containerColor = Surface200
+        ) {
+            DropdownMenuItem(
+                text = { Text(text = "Edit", style = MaterialTheme.typography.bodyMedium) },
+                onClick = onEdit
+            )
+
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        text = "Delete",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Danger
+                    )
+                },
+                onClick = onDelete
+            )
         }
     }
 }

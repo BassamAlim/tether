@@ -11,6 +11,7 @@ import bassamalim.tether.core.ui.inFromTop
 import bassamalim.tether.core.ui.outToBottom
 import bassamalim.tether.core.ui.outToTop
 import bassamalim.tether.features.addPerson.AddPersonScreen
+import bassamalim.tether.features.connect.ConnectScreen
 import bassamalim.tether.features.firstRun.FirstRunScreen
 import bassamalim.tether.features.importContacts.ImportContactsScreen
 import bassamalim.tether.features.lock.LockScreen
@@ -58,6 +59,8 @@ fun NavGraph(navController: NavHostController, startDestination: Screen) {
         composable<Screen.AddPerson> { AddPersonScreen() }
 
         composable<Screen.LogInteraction> { LogInteractionScreen() }
+
+        composable<Screen.Connect> { ConnectScreen() }
 
         composable<Screen.Search> { SearchScreen() }
 

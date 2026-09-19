@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import bassamalim.tether.core.enums.Initiator
 import bassamalim.tether.core.enums.InteractionType
 import java.time.LocalDate
 
@@ -29,6 +30,13 @@ data class Interaction(
      * shouldn't buy an extra week.
      */
     val occurredOn: LocalDate,
+    /**
+     * Where it happened, free text: "Blue Tokai", "their place", "Careem's office". Blank when
+     * it wasn't asked for (the one-tap log) or when it wouldn't mean anything (a phone call).
+     */
+    val location: String = "",
+    /** Who reached out, when it was asked and when it divides that way. */
+    val initiatedBy: Initiator? = null,
     /** Where the value compounds over the years. */
     val note: String = ""
 )

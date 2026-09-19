@@ -54,6 +54,7 @@ class SearchViewModel @Inject constructor(
                     initials = initials(match.person.person.name),
                     meta = listOfNotNull(
                         match.interaction.type?.label,
+                        match.interaction.location.takeIf { it.isNotBlank() },
                         elapsedLabel(match.interaction.occurredOn, today)
                     ).joinToString(" · "),
                     note = match.interaction.note

@@ -38,13 +38,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import bassamalim.tether.core.enums.Initiator
 import bassamalim.tether.core.enums.InteractionType
 import bassamalim.tether.core.ui.components.FilterPill
+import bassamalim.tether.core.ui.components.LabeledTextField
 import bassamalim.tether.core.ui.components.SectionLabel
 import bassamalim.tether.core.ui.theme.Accent
 import bassamalim.tether.core.ui.theme.AccentInk
 import bassamalim.tether.core.ui.theme.AccentWash
 import bassamalim.tether.core.ui.theme.Action
+import bassamalim.tether.core.ui.theme.Danger
+import bassamalim.tether.core.ui.theme.DangerWash
 import bassamalim.tether.core.ui.theme.Ink
 import bassamalim.tether.core.ui.theme.InkFaint
 import bassamalim.tether.core.ui.theme.InkMuted
@@ -81,8 +85,11 @@ fun LogInteractionScreen(viewModel: LogInteractionViewModel = hiltViewModel()) {
             onTodaySelect = viewModel::onTodaySelect,
             onYesterdaySelect = viewModel::onYesterdaySelect,
             onPickDate = viewModel::onPickDate,
+            onLocationChange = viewModel::onLocationChange,
+            onInitiatorSelect = viewModel::onInitiatorSelect,
             onNoteChange = viewModel::onNoteChange,
-            onSave = viewModel::onSave
+            onSave = viewModel::onSave,
+            onDelete = viewModel::onDelete
         )
     }
 
@@ -103,15 +110,18 @@ private fun SheetContent(
     onTodaySelect: () -> Unit,
     onYesterdaySelect: () -> Unit,
     onPickDate: () -> Unit,
+    onLocationChange: (String) -> Unit,
+    onInitiatorSelect: (Initiator) -> Unit,
     onNoteChange: (String) -> Unit,
-    onSave: () -> Unit
+    onSave: () -> Unit,
+    onDelete: () -> Unit
 ) {
     Column(
         Modifier
             .verticalScroll(rememberScrollState())
             .padding(start = Spacing.screen, end = Spacing.screen, bottom = 28.dp)
     ) {
-        Text(text = "Log a catch-up", style = MaterialTheme.typography.titleMedium)
+        Text(text = state.title, style = MaterialTheme.typography.titleMedium)
 
         PersonPill(name = state.personName, initials = state.initials)
 
@@ -142,6 +152,33 @@ private fun SheetContent(
             onPickDate = onPickDate
         )
 
+        LabeledTextField(
+            label = "Where",
+            value = state.location,
+            onValueChange = onLocationChange,
+            placeholder = "Blue Tokai, their place, the office",
+            modifier = Modifier.padding(top = Spacing.screen)
+        )
+
+        SectionLabel(text = "Who reached out", modifier = Modifier.padding(top = Spacing.screen))
+
+        FlowRow(
+            modifier = Modifier
+                .padding(top = 10.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+        ) {
+            // Pills rather than a segmented control, because unlike When this has a third
+            // answer — no one did, you ran into each other — and a pill can be tapped off.
+            Initiator.entries.forEach { initiator ->
+                FilterPill(
+                    label = initiator.label,
+                    selected = initiator == state.initiatedBy,
+                    onClick = { onInitiatorSelect(initiator) }
+                )
+            }
+        }
+
         SectionLabel(
             text = "What you talked about",
             modifier = Modifier.padding(top = Spacing.screen)
@@ -168,6 +205,27 @@ private fun SheetContent(
                 style = MaterialTheme.typography.labelLarge,
                 color = AccentInk
             )
+        }
+
+        // Only on a catch-up that exists: it's a way to take one back out of the history, not
+        // a way to abandon one you haven't written yet — Cancel does that by dismissing.
+        if (state.isEditing) {
+            Box(
+                modifier = Modifier
+                    .padding(top = Spacing.md)
+                    .fillMaxWidth()
+                    .height(52.dp)
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(color = DangerWash)
+                    .clickable(enabled = state.canSave, onClick = onDelete),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Delete this catch-up",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Danger
+                )
+            }
         }
     }
 }

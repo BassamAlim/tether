@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import bassamalim.tether.core.data.dataSources.room.entities.Interaction
+import bassamalim.tether.core.enums.Initiator
 import bassamalim.tether.core.enums.InteractionType
 import bassamalim.tether.core.nav.Navigator
 import bassamalim.tether.core.nav.Screen
@@ -25,7 +27,11 @@ class LogInteractionViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val personId = savedStateHandle.toRoute<Screen.LogInteraction>().personId
+    private val route = savedStateHandle.toRoute<Screen.LogInteraction>()
+    private val personId = route.personId
+
+    /** The row being corrected, once it's loaded; null while logging something new. */
+    private var editing: Interaction? = null
 
     private val _uiState = MutableStateFlow(
         // Today is the only default worth preselecting; guessing how you spoke would write
@@ -43,6 +49,26 @@ class LogInteractionViewModel @Inject constructor(
                     personName = person.person.name,
                     initials = initials(person.person.name)
                 )
+            }
+        }
+
+        // Correcting one: the sheet opens on what was written, so editing is a change to it
+        // rather than a retyping of it.
+        if (route.interactionId != 0L) {
+            viewModelScope.launch {
+                val interaction = domain.getInteraction(route.interactionId) ?: return@launch
+                editing = interaction
+
+                _uiState.update {
+                    it.copy(
+                        type = interaction.type,
+                        occurredOn = interaction.occurredOn,
+                        location = interaction.location,
+                        initiatedBy = interaction.initiatedBy,
+                        note = interaction.note,
+                        isEditing = true
+                    )
+                }
             }
         }
     }
@@ -63,9 +89,28 @@ class LogInteractionViewModel @Inject constructor(
 
     fun onDatePickerDismiss() = _uiState.update { it.copy(isPickingDate = false) }
 
+    fun onInitiatorSelect(value: Initiator) = _uiState.update {
+        it.copy(initiatedBy = if (it.initiatedBy == value) null else value)
+    }
+
+    fun onLocationChange(value: String) = _uiState.update { it.copy(location = value) }
+
     fun onNoteChange(value: String) = _uiState.update { it.copy(note = value) }
 
     fun onDismiss() = navigator.popBackStack()
+
+    /** Only ever offered for a catch-up that's already in the history. */
+    fun onDelete() {
+        val edited = editing ?: return
+        if (!_uiState.value.canSave) return
+
+        _uiState.update { it.copy(isSaving = true) }
+
+        viewModelScope.launch {
+            domain.delete(edited)
+            navigator.popBackStack()
+        }
+    }
 
     fun onSave() {
         val state = _uiState.value
@@ -74,12 +119,28 @@ class LogInteractionViewModel @Inject constructor(
         _uiState.update { it.copy(isSaving = true) }
 
         viewModelScope.launch {
-            domain.log(
-                personId = personId,
-                type = state.type,
-                occurredOn = state.occurredOn,
-                note = state.note
-            )
+            val edited = editing
+
+            if (edited == null) {
+                domain.log(
+                    personId = personId,
+                    type = state.type,
+                    occurredOn = state.occurredOn,
+                    location = state.location,
+                    initiatedBy = state.initiatedBy,
+                    note = state.note
+                )
+            }
+            else {
+                domain.update(
+                    interaction = edited,
+                    type = state.type,
+                    occurredOn = state.occurredOn,
+                    location = state.location,
+                    initiatedBy = state.initiatedBy,
+                    note = state.note
+                )
+            }
 
             navigator.popBackStack()
         }

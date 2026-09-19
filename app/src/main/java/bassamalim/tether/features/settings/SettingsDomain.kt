@@ -1,5 +1,6 @@
 package bassamalim.tether.features.settings
 
+import bassamalim.tether.core.data.repositories.ConnectionsRepository
 import bassamalim.tether.core.data.repositories.InteractionsRepository
 import bassamalim.tether.core.data.repositories.PeopleRepository
 import bassamalim.tether.core.data.repositories.PreferencesRepository
@@ -16,6 +17,7 @@ class SettingsDomain @Inject constructor(
     private val preferencesRepository: PreferencesRepository,
     private val peopleRepository: PeopleRepository,
     private val interactionsRepository: InteractionsRepository,
+    private val connectionsRepository: ConnectionsRepository,
     private val nudgeScheduler: NudgeScheduler,
     private val clock: Clock
 ) {
@@ -54,6 +56,7 @@ class SettingsDomain @Inject constructor(
         val people = peopleRepository.getAll()
         val detailsByPerson = peopleRepository.getAllDetails().groupBy { it.personId }
         val interactionsByPerson = interactionsRepository.getAll().groupBy { it.personId }
+        val peopleById = people.associateBy { it.id }
 
         val backup = BackupFile(
             exportedOn = LocalDate.now(clock).toString(),
@@ -71,10 +74,18 @@ class SettingsDomain @Inject constructor(
                         BackupInteraction(
                             type = it.type?.name,
                             occurredOn = it.occurredOn.toString(),
+                            location = it.location,
+                            initiatedBy = it.initiatedBy?.name,
                             note = it.note
                         )
                     }
                 )
+            },
+            connections = connectionsRepository.getAll().mapNotNull { connection ->
+                val one = peopleById[connection.personAId] ?: return@mapNotNull null
+                val other = peopleById[connection.personBId] ?: return@mapNotNull null
+
+                BackupConnection(a = one.name, b = other.name, label = connection.label)
             }
         )
 

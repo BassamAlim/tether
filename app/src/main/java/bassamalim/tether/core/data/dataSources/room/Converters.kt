@@ -1,6 +1,7 @@
 package bassamalim.tether.core.data.dataSources.room
 
 import androidx.room.TypeConverter
+import bassamalim.tether.core.enums.Initiator
 import bassamalim.tether.core.enums.InteractionType
 import bassamalim.tether.core.enums.RelationshipTag
 import java.time.LocalDate
@@ -24,6 +25,13 @@ class Converters {
 
     @TypeConverter
     fun fromInteractionType(type: InteractionType?): String? = type?.name
+
+    @TypeConverter
+    fun toInitiator(name: String?): Initiator? =
+        name?.let { stored -> Initiator.entries.firstOrNull { it.name == stored } }
+
+    @TypeConverter
+    fun fromInitiator(initiator: Initiator?): String? = initiator?.name
 
     @TypeConverter
     fun toRelationshipTag(name: String?): RelationshipTag? =

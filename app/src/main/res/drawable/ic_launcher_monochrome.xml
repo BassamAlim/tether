@@ -1,10 +1,13 @@
 <!--
-  Themed-icon silhouette of the mark, same geometry as ic_launcher_foreground (108x108 tile, rx 26, mark at
-  translate(18 18) scale(0.75) = 44% of the tile).
+  Themed-icon silhouette of the mark, same geometry as ic_launcher_foreground (108x108 tile,
+  rx 26), nudged up from the asset's 44% of the tile to 53%.
 
   Android only shows the inner 72dp of this 108dp canvas and scales it up to fill the launcher
-  tile, so reproducing that 44% on screen means 0.5 off the 96x96 source art, not 0.75;
-  placing the mark at 0.75 here renders it half again too large.
+  tile, so that 53% on screen means 0.605 off the 96x96 source art, not 0.75; placing the mark
+  at 0.75 here renders it half again too large.
+
+  The mark sits 2dp below the tile's centre line: the two dots ride the top arm, so a
+  geometrically centred mark reads high.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -12,11 +15,11 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
     <path
-        android:pathData="M42,43.5 H66 M54,43.5 V64.5"
+        android:pathData="M39.48,43.3 H68.52 M54,43.3 V68.7"
         android:strokeColor="#FFFFFFFF"
-        android:strokeWidth="4"
+        android:strokeWidth="4.84"
         android:strokeLineCap="round" />
-    <path android:fillColor="#FFFFFFFF" android:pathData="M38,43.5 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
-    <path android:fillColor="#FFFFFFFF" android:pathData="M62,43.5 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
-    <path android:fillColor="#FFFFFFFF" android:pathData="M50,64.5 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M34.64,43.3 a4.84,4.84 0 1,0 9.68,0 a4.84,4.84 0 1,0 -9.68,0" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M63.68,43.3 a4.84,4.84 0 1,0 9.68,0 a4.84,4.84 0 1,0 -9.68,0" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M49.16,68.7 a4.84,4.84 0 1,0 9.68,0 a4.84,4.84 0 1,0 -9.68,0" />
 </vector>

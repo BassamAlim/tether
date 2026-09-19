@@ -117,7 +117,7 @@ private fun SearchScreen(
         if (state.isEmpty) {
             item {
                 Text(
-                    text = "Nothing matches \"${state.query}\": not a name, a detail, or a note.",
+                    text = "Nothing matches \"${state.query}\": not a name, a detail, a place, or a note.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = InkFaint,
                     modifier = Modifier.padding(Spacing.xxl)
@@ -279,12 +279,16 @@ private fun NoteRow(note: NoteResult, query: String, onClick: () -> Unit) {
                 Text(text = note.meta, style = TetherType.Timestamp, color = InkFaint)
             }
 
-            Text(
-                text = highlighted(note.note, query),
-                style = MaterialTheme.typography.bodySmall,
-                color = InkMuted,
-                modifier = Modifier.padding(top = 5.dp)
-            )
+            // A catch-up can match on where it happened alone, and that's already in the meta
+            // line, so an empty note gets no empty row.
+            if (note.note.isNotBlank()) {
+                Text(
+                    text = highlighted(note.note, query),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = InkMuted,
+                    modifier = Modifier.padding(top = 5.dp)
+                )
+            }
         }
     }
 }
