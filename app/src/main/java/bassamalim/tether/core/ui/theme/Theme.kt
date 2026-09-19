@@ -1,6 +1,7 @@
 package bassamalim.tether.core.ui.theme
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 
@@ -46,7 +47,11 @@ fun TetherTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = TetherColorScheme,
         typography = Typography,
-        shapes = Shapes,
-        content = content
-    )
+        shapes = Shapes
+    ) {
+        // The whole app sits on one Surface so that text with no explicit colour inherits [Ink].
+        // Without it, Compose's default content colour is black — invisible on Surface0, and
+        // only screens that happened to sit inside a Scaffold were spared.
+        Surface(color = Surface0, contentColor = Ink, content = content)
+    }
 }

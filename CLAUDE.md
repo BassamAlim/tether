@@ -83,6 +83,12 @@ Don't hardcode hex values or `.dp` literals that aren't on the scale in `Dimens.
   should notice (`Attention`). If a screen spends it twice, one of them is wrong.
 - Type is Plus Jakarta Sans, bundled as a variable font at `res/font/plus_jakarta_sans.ttf` and
   mapped onto Material slots in `Type.kt`. Styles with no Material slot live in `TetherType`.
+- **Icons are the design's own stroke glyphs**, transcribed from the boards into
+  `res/drawable/ic_*.xml` and used with `painterResource`. There is no `material-icons`
+  dependency — don't add one; port the glyph from the board instead.
+- `TetherTheme` wraps everything in a `Surface(color = Surface0, contentColor = Ink)`. Without
+  that, `Text` with no explicit colour falls back to Compose's default black, which is invisible
+  here — it only looked fine on screens that happened to sit inside a `Scaffold`.
 - Material 3 components with Tether's colours substituted — list rows are `ListItem`, filter
   pills are chips, the log sheet is `ModalBottomSheet`, the lime circle is a
   `FloatingActionButton`, the bottom bar is `NavigationBar` (80dp), undo is a `Snackbar`.
@@ -129,6 +135,10 @@ writes JSON; there is no import of that file yet.
 The weekly nudge is built: `App` supplies Hilt's `HiltWorkerFactory` to WorkManager (so the
 manifest removes `WorkManagerInitializer`), `NudgeScheduler.sync()` runs on every launch and
 whenever the nudge settings change, and `NudgeActionReceiver` handles "Tomorrow".
+
+The launcher icon is the Tether mark as an adaptive icon (`ic_launcher_foreground`, scaled to
+0.8 so the top nodes clear the circular mask launchers may apply), on a surface-0 background,
+with a monochrome layer for themed icons. The same mark is the notification's small icon.
 
 Three places the implementation reads differently from the boards, all deliberate: the log sheet
 is a `ModalBottomSheet` on its own nav destination, so its scrim covers the app background

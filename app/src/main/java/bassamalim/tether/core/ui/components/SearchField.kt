@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -25,6 +23,8 @@ import bassamalim.tether.core.ui.theme.Ink
 import bassamalim.tether.core.ui.theme.InkFaint
 import bassamalim.tether.core.ui.theme.Sizes
 import bassamalim.tether.core.ui.theme.Surface200
+import bassamalim.tether.R
+import androidx.compose.ui.res.painterResource
 
 /** Looks like the field, behaves like a button: tapping it opens the Search screen. */
 @Composable
@@ -40,7 +40,7 @@ fun SearchFieldButton(placeholder: String, onClick: () -> Unit, modifier: Modifi
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Icon(
-            imageVector = Icons.Rounded.Search,
+            painter = painterResource(R.drawable.ic_search),
             contentDescription = null,
             tint = InkFaint,
             modifier = Modifier.size(18.dp)
@@ -67,7 +67,7 @@ fun SearchField(
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Icon(
-            imageVector = Icons.Rounded.Search,
+            painter = painterResource(R.drawable.ic_search),
             contentDescription = null,
             tint = InkFaint,
             modifier = Modifier.size(18.dp)

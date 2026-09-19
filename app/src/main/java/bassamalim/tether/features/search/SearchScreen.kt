@@ -15,9 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -53,6 +50,8 @@ import bassamalim.tether.core.ui.theme.Surface100
 import bassamalim.tether.core.ui.theme.Surface200
 import bassamalim.tether.core.ui.theme.Surface300
 import bassamalim.tether.core.ui.theme.TetherType
+import bassamalim.tether.R
+import androidx.compose.ui.res.painterResource
 
 @Composable
 fun SearchScreen(viewModel: SearchViewModel = hiltViewModel()) {
@@ -164,7 +163,7 @@ private fun SearchBar(
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                painter = painterResource(R.drawable.ic_back),
                 contentDescription = "Close search",
                 tint = Ink,
                 modifier = Modifier.size(22.dp)
@@ -210,7 +209,7 @@ private fun SearchBar(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.Close,
+                        painter = painterResource(R.drawable.ic_close),
                         contentDescription = "Clear search",
                         tint = InkMuted,
                         modifier = Modifier.size(16.dp)

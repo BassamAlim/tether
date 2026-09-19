@@ -1,7 +1,6 @@
 package bassamalim.tether.features.addPerson
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,15 +14,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -43,6 +44,8 @@ import bassamalim.tether.core.ui.theme.Surface0
 import bassamalim.tether.core.ui.theme.Surface100
 import bassamalim.tether.core.ui.theme.Surface300
 import bassamalim.tether.core.ui.theme.TetherType
+import bassamalim.tether.R
+import androidx.compose.ui.res.painterResource
 
 @Composable
 fun AddPersonScreen(viewModel: AddPersonViewModel = hiltViewModel()) {
@@ -173,16 +176,27 @@ private fun TopBar(canSave: Boolean, onCancel: () -> Unit, onSave: () -> Unit) {
 // TODO: photos aren't stored yet — wire this to a picker when Person gets a photo.
 @Composable
 private fun PhotoButton(modifier: Modifier = Modifier) {
+    // The board draws this outline dashed, which Compose has no Border for.
+    val dashes = remember { PathEffect.dashPathEffect(floatArrayOf(14f, 10f)) }
+
     Box(
         modifier = modifier
             .padding(top = Spacing.md)
             .size(80.dp)
             .background(color = Surface100, shape = Pill)
-            .border(width = Sizes.border, color = Surface300, shape = Pill),
+            .drawBehind {
+                val stroke = Sizes.border.toPx()
+
+                drawCircle(
+                    color = Surface300,
+                    radius = (size.minDimension - stroke) / 2,
+                    style = Stroke(width = stroke, pathEffect = dashes)
+                )
+            },
         contentAlignment = Alignment.Center
     ) {
         Icon(
-            imageVector = Icons.Rounded.Add,
+            painter = painterResource(R.drawable.ic_add),
             contentDescription = "Add a photo",
             tint = InkFaint,
             modifier = Modifier.size(24.dp)

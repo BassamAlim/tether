@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -32,6 +30,8 @@ import bassamalim.tether.core.ui.theme.Spacing
 import bassamalim.tether.core.ui.theme.Surface0
 import bassamalim.tether.core.ui.theme.Surface200
 import bassamalim.tether.core.ui.theme.TetherType
+import bassamalim.tether.R
+import androidx.compose.ui.res.painterResource
 
 /**
  * The only screen that has to explain anything: one line on what Tether does, then the two ways
@@ -61,9 +61,8 @@ private fun FirstRunScreen(onAddPersonClick: () -> Unit, onImportClick: () -> Un
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // TODO: swap for the app mark once there's a vector of it.
             Icon(
-                imageVector = Icons.Rounded.Favorite,
+                painter = painterResource(R.drawable.ic_tether_mark),
                 contentDescription = null,
                 tint = Accent,
                 modifier = Modifier.size(76.dp)

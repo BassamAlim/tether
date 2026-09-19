@@ -17,8 +17,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -39,6 +37,8 @@ import bassamalim.tether.core.ui.theme.InkFaint
 import bassamalim.tether.core.ui.theme.Spacing
 import bassamalim.tether.core.ui.theme.Surface0
 import bassamalim.tether.core.ui.theme.TetherType
+import bassamalim.tether.R
+import androidx.compose.ui.res.painterResource
 
 /**
  * The app's own locked surface. Android draws the fingerprint sheet itself, so all this screen
@@ -82,9 +82,8 @@ private fun LockScreen(onUnlockClick: () -> Unit) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // TODO: swap for the app mark once there's a vector of it.
             Icon(
-                imageVector = Icons.Rounded.Lock,
+                painter = painterResource(R.drawable.ic_tether_mark),
                 contentDescription = null,
                 tint = Accent,
                 modifier = Modifier.size(64.dp)
@@ -114,7 +113,7 @@ private fun LockScreen(onUnlockClick: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)
         ) {
             Icon(
-                imageVector = Icons.Rounded.Lock,
+                painter = painterResource(R.drawable.ic_fingerprint),
                 contentDescription = null,
                 tint = AccentInk,
                 modifier = Modifier.size(20.dp)

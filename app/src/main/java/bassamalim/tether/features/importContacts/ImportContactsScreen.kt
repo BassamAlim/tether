@@ -19,8 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -51,6 +49,8 @@ import bassamalim.tether.core.ui.theme.Surface0
 import bassamalim.tether.core.ui.theme.Surface100
 import bassamalim.tether.core.ui.theme.Surface300
 import bassamalim.tether.core.ui.theme.TetherType
+import bassamalim.tether.R
+import androidx.compose.ui.res.painterResource
 
 @Composable
 fun ImportContactsScreen(viewModel: ImportContactsViewModel = hiltViewModel()) {
@@ -280,7 +280,7 @@ private fun Tick(isSelected: Boolean) {
     ) {
         if (isSelected) {
             Icon(
-                imageVector = Icons.Rounded.Check,
+                painter = painterResource(R.drawable.ic_check),
                 contentDescription = null,
                 tint = AccentInk,
                 modifier = Modifier.size(16.dp)

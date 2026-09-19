@@ -1,8 +1,4 @@
-<!--
-  The Tether mark from the design system: two people tied to a third.
-  Source art is a 96x96 SVG, scaled by 0.8 and centred on the 108dp adaptive canvas. 0.8 rather
-  than a tighter fit because launchers may mask the icon to a 66dp circle, and at 0.9 the two
-  top nodes crossed it.
+<!-- Themed-icon silhouette: same mark, flat white for the launcher to tint.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -11,16 +7,16 @@
     android:viewportHeight="108">
     <path
         android:pathData="M34.8,37.2 H73.2 M54,37.2 V70.8"
-        android:strokeColor="@color/accent"
+        android:strokeColor="#FFFFFFFF"
         android:strokeWidth="6.4"
         android:strokeLineCap="round" />
     <path
-        android:fillColor="@color/accent"
+        android:fillColor="#FFFFFFFF"
         android:pathData="M28.4,37.2 a6.4,6.4 0 1,0 12.8,0 a6.4,6.4 0 1,0 -12.8,0" />
     <path
-        android:fillColor="@color/accent"
+        android:fillColor="#FFFFFFFF"
         android:pathData="M66.8,37.2 a6.4,6.4 0 1,0 12.8,0 a6.4,6.4 0 1,0 -12.8,0" />
     <path
-        android:fillColor="@color/accent"
+        android:fillColor="#FFFFFFFF"
         android:pathData="M47.6,70.8 a6.4,6.4 0 1,0 12.8,0 a6.4,6.4 0 1,0 -12.8,0" />
 </vector>

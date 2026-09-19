@@ -18,12 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.Send
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -60,6 +54,8 @@ import bassamalim.tether.core.ui.theme.Surface100
 import bassamalim.tether.core.ui.theme.Surface200
 import bassamalim.tether.core.ui.theme.Surface300
 import bassamalim.tether.core.ui.theme.TetherType
+import bassamalim.tether.R
+import androidx.compose.ui.res.painterResource
 
 @Composable
 fun PersonScreen(viewModel: PersonViewModel = hiltViewModel()) {
@@ -172,7 +168,7 @@ private fun TopBar(
     ) {
         CircleIconButton(onClick = onBack) {
             Icon(
-                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                painter = painterResource(R.drawable.ic_back),
                 contentDescription = "Back to people",
                 tint = Ink,
                 modifier = Modifier.size(22.dp)
@@ -182,7 +178,7 @@ private fun TopBar(
         Box {
             CircleIconButton(onClick = onMenuOpen) {
                 Icon(
-                    imageVector = Icons.Rounded.MoreVert,
+                    painter = painterResource(R.drawable.ic_more),
                     contentDescription = "More options",
                     tint = Ink,
                     modifier = Modifier.size(20.dp)
@@ -283,7 +279,7 @@ private fun Actions(canMessage: Boolean, onLogCatchUp: () -> Unit, onMessage: ()
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm, Alignment.CenterHorizontally)
         ) {
             Icon(
-                imageVector = Icons.Rounded.Check,
+                painter = painterResource(R.drawable.ic_check),
                 contentDescription = null,
                 tint = AccentInk,
                 modifier = Modifier.size(18.dp)
@@ -299,7 +295,7 @@ private fun Actions(canMessage: Boolean, onLogCatchUp: () -> Unit, onMessage: ()
         // TODO: per-person reminders aren't built yet — the weekly nudge is all there is.
         SquareIconButton(enabled = false, onClick = {}) {
             Icon(
-                imageVector = Icons.Rounded.Notifications,
+                painter = painterResource(R.drawable.ic_bell),
                 contentDescription = "Set a reminder",
                 tint = InkFaint,
                 modifier = Modifier.size(19.dp)
@@ -308,7 +304,7 @@ private fun Actions(canMessage: Boolean, onLogCatchUp: () -> Unit, onMessage: ()
 
         SquareIconButton(enabled = canMessage, onClick = onMessage) {
             Icon(
-                imageVector = Icons.AutoMirrored.Rounded.Send,
+                painter = painterResource(R.drawable.ic_message),
                 contentDescription = "Send a message",
                 tint = if (canMessage) Ink else InkFaint,
                 modifier = Modifier.size(19.dp)

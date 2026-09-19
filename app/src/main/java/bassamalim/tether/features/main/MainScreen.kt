@@ -3,11 +3,6 @@ package bassamalim.tether.features.main
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Notifications
-import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -23,7 +18,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.hilt.navigation.compose.hiltViewModel
 import bassamalim.tether.core.ui.theme.AccentInk
 import bassamalim.tether.core.ui.theme.AccentWash
@@ -34,6 +28,9 @@ import bassamalim.tether.core.ui.theme.Surface0
 import bassamalim.tether.features.catchUp.CatchUpScreen
 import bassamalim.tether.features.people.PeopleScreen
 import bassamalim.tether.features.settings.SettingsScreen
+import androidx.annotation.DrawableRes
+import bassamalim.tether.R
+import androidx.compose.ui.res.painterResource
 
 /**
  * The tabbed shell. Tabs are local state rather than nav destinations: switching them is not a
@@ -51,7 +48,7 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
                     NavigationBarItem(
                         selected = tab == selected,
                         onClick = { selected = tab },
-                        icon = { Icon(tab.icon, contentDescription = null) },
+                        icon = { Icon(painterResource(tab.icon), contentDescription = null) },
                         label = { Text(tab.label) },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = Ink,
@@ -72,7 +69,10 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
                     contentColor = AccentInk,
                     shape = MaterialTheme.shapes.large
                 ) {
-                    Icon(Icons.Rounded.Add, contentDescription = "Add person")
+                    Icon(
+                        painter = painterResource(R.drawable.ic_add),
+                        contentDescription = "Add person"
+                    )
                 }
             }
         }
@@ -91,8 +91,8 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
     }
 }
 
-enum class MainTab(val label: String, val icon: ImageVector) {
-    PEOPLE("People", Icons.Rounded.Person),
-    CATCH_UP("Catch up", Icons.Rounded.Notifications),
-    SETTINGS("Settings", Icons.Rounded.Settings)
+enum class MainTab(val label: String, @param:DrawableRes val icon: Int) {
+    PEOPLE("People", R.drawable.ic_people),
+    CATCH_UP("Catch up", R.drawable.ic_bell),
+    SETTINGS("Settings", R.drawable.ic_settings)
 }

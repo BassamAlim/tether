@@ -13,8 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -44,6 +42,8 @@ import bassamalim.tether.core.ui.theme.Spacing
 import bassamalim.tether.core.ui.theme.Surface0
 import bassamalim.tether.core.ui.theme.Surface100
 import bassamalim.tether.core.ui.theme.Surface200
+import bassamalim.tether.R
+import androidx.compose.ui.res.painterResource
 
 private const val UNDO = "UNDO"
 
@@ -206,7 +206,7 @@ private fun CatchUpRow(item: CatchUpItem, onClick: () -> Unit, onReachedOut: () 
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = Icons.Rounded.Check,
+                painter = painterResource(R.drawable.ic_check),
                 contentDescription = "Mark ${item.name} as reached out",
                 tint = InkMuted,
                 modifier = Modifier.size(18.dp)
