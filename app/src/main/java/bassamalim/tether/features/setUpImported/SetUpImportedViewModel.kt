@@ -60,6 +60,10 @@ class SetUpImportedViewModel @Inject constructor(
 
     fun onHowYouMetChange(value: String) = _uiState.update { it.copy(howYouMet = value) }
 
+    fun onWorkplaceChange(value: String) = _uiState.update { it.copy(workplace = value) }
+
+    fun onJobTitleChange(value: String) = _uiState.update { it.copy(jobTitle = value) }
+
     /** Left as the import made them: in Tether, with no cadence and no relationship. */
     fun onSkip() = advance()
 
@@ -74,7 +78,9 @@ class SetUpImportedViewModel @Inject constructor(
                 personId = people[index].id,
                 tag = state.tag,
                 cadence = state.cadence,
-                howYouMet = state.howYouMet
+                howYouMet = state.howYouMet,
+                workplace = state.workplace,
+                jobTitle = state.jobTitle
             )
 
             advance()
@@ -98,6 +104,9 @@ class SetUpImportedViewModel @Inject constructor(
             name = person.name,
             initials = initials(person.name),
             phone = person.phone.orEmpty(),
+            // The address book may already have answered this one; the walk only confirms it.
+            workplace = person.workplace.orEmpty(),
+            jobTitle = person.jobTitle.orEmpty(),
             progress = "${at + 1} of ${people.size}",
             isLast = at == people.lastIndex
         )

@@ -7,6 +7,8 @@ import bassamalim.tether.core.nav.Screen
 import bassamalim.tether.core.utils.cadenceLabel
 import bassamalim.tether.core.utils.elapsedLabel
 import bassamalim.tether.core.utils.initials
+import bassamalim.tether.core.utils.parsePlace
+import bassamalim.tether.core.utils.workLabel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,8 +42,10 @@ class SearchViewModel @Inject constructor(
                     id = match.person.person.id,
                     name = match.person.person.name,
                     initials = initials(match.person.person.name),
-                    subtitle = match.detail
-                        ?.let { "${it.label} ${it.value}" }
+                    // Whatever hit is what the row shows, work first: it's the thing you were
+                    // most likely remembering them by.
+                    subtitle = workSubtitle(match)
+                        ?: match.detail?.let { "${it.label} ${it.value}" }
                         ?: cadenceLabel(match.person.person.cadenceDays),
                     lastContactLabel = elapsedLabel(match.person.lastInteractionOn, today)
                 )
@@ -54,7 +58,7 @@ class SearchViewModel @Inject constructor(
                     initials = initials(match.person.person.name),
                     meta = listOfNotNull(
                         match.interaction.type?.label,
-                        match.interaction.location.takeIf { it.isNotBlank() },
+                        parsePlace(match.interaction.location)?.label,
                         elapsedLabel(match.interaction.occurredOn, today)
                     ).joinToString(" · "),
                     note = match.interaction.note
@@ -66,6 +70,9 @@ class SearchViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = SearchUiState()
     )
+
+    private fun workSubtitle(match: PersonMatch) = if (!match.matchedWork) null
+    else workLabel(match.person.person.workplace, match.person.person.jobTitle)
 
     fun onQueryChange(value: String) = query.update { value }
 

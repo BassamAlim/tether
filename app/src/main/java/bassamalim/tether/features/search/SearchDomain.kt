@@ -1,6 +1,7 @@
 package bassamalim.tether.features.search
 
 import bassamalim.tether.core.data.dataSources.room.entities.Interaction
+import bassamalim.tether.core.data.dataSources.room.entities.Person
 import bassamalim.tether.core.data.dataSources.room.entities.PersonDetail
 import bassamalim.tether.core.data.repositories.InteractionsRepository
 import bassamalim.tether.core.data.repositories.PeopleRepository
@@ -37,12 +38,19 @@ class SearchDomain @Inject constructor(
 
             SearchResults(
                 people = people
-                    .filter { it.person.name.contains(query, ignoreCase = true) || it.person.id in detailsByPerson }
-                    .map { person ->
+                    .mapNotNull { person ->
+                        // Work is a column rather than a detail row, so it can't come back from
+                        // the query that finds detail matches; it's matched here instead.
+                        val matchedWork = person.person.workMatches(query)
+                        val detail = detailsByPerson[person.person.id]?.firstOrNull()
+                        val matchedName = person.person.name.contains(query, ignoreCase = true)
+                        if (!matchedName && !matchedWork && detail == null) return@mapNotNull null
+
                         PersonMatch(
                             person = person,
                             // The line that hit, when the name wasn't what matched.
-                            detail = detailsByPerson[person.person.id]?.firstOrNull()
+                            detail = detail,
+                            matchedWork = matchedWork
                         )
                     },
                 notes = notes.mapNotNull { interaction ->
@@ -60,6 +68,15 @@ data class SearchResults(
     val notes: List<NoteMatch> = emptyList()
 )
 
-data class PersonMatch(val person: TrackedPerson, val detail: PersonDetail?)
+data class PersonMatch(
+    val person: TrackedPerson,
+    val detail: PersonDetail?,
+    /** True when it was where they work, or what they do, that the query hit. */
+    val matchedWork: Boolean = false
+)
+
+private fun Person.workMatches(query: String) =
+    workplace?.contains(query, ignoreCase = true) == true ||
+            jobTitle?.contains(query, ignoreCase = true) == true
 
 data class NoteMatch(val interaction: Interaction, val person: TrackedPerson)

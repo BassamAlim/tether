@@ -46,10 +46,20 @@ class PersonDomain @Inject constructor(
 
     fun today(): LocalDate = trackedPeople.today()
 
+    /** A blank name is refused here as well as on the button: every row needs something to show. */
+    suspend fun setName(id: Long, name: String) {
+        if (name.isBlank()) return
+        peopleRepository.setName(id, name)
+    }
+
     suspend fun setTag(id: Long, tag: String?) {
         relationshipTypesRepository.remember(tag)
         peopleRepository.setTag(id, tag)
     }
+
+    /** Jobs change more often than names do; both halves are rewritten together. */
+    suspend fun setWork(id: Long, workplace: String, jobTitle: String) =
+        peopleRepository.setWork(id, workplace, jobTitle)
 
     suspend fun setCadence(id: Long, cadenceDays: Int?) =
         peopleRepository.setCadence(id, cadenceDays)

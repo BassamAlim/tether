@@ -13,7 +13,7 @@ data class PersonResult(
     val id: Long,
     val name: String,
     val initials: String,
-    /** "Works at Careem" when a detail matched, otherwise their cadence. */
+    /** What matched: their work, the detail line that hit, or else their cadence. */
     val subtitle: String,
     val lastContactLabel: String
 )

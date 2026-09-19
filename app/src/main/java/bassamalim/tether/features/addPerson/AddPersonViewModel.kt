@@ -44,6 +44,10 @@ class AddPersonViewModel @Inject constructor(
 
     fun onHowYouMetChange(value: String) = _uiState.update { it.copy(howYouMet = value) }
 
+    fun onWorkplaceChange(value: String) = _uiState.update { it.copy(workplace = value) }
+
+    fun onJobTitleChange(value: String) = _uiState.update { it.copy(jobTitle = value) }
+
     fun onCancel() = navigator.popBackStack()
 
     /**
@@ -66,7 +70,9 @@ class AddPersonViewModel @Inject constructor(
                 name = state.name,
                 tag = state.tag,
                 cadence = state.cadence,
-                howYouMet = state.howYouMet
+                howYouMet = state.howYouMet,
+                workplace = state.workplace,
+                jobTitle = state.jobTitle
             )
 
             navigator.popBackStack()

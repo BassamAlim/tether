@@ -13,6 +13,8 @@ data class AddPersonUiState(
      */
     val cadence: CadencePreset = CadencePreset.NEVER,
     val howYouMet: String = "",
+    val workplace: String = "",
+    val jobTitle: String = "",
     val isSaving: Boolean = false
 ) {
     /** A name is the only thing Tether insists on; everything else can be filled in later. */

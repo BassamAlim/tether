@@ -18,10 +18,11 @@ import javax.inject.Inject
 
 /**
  * The colour a person is drawn in. The vocabulary is open-ended but a palette isn't — past
- * five hues, dots stop being tellable apart — so the five relationships most people carry get
+ * eight hues, dots stop being tellable apart — so the eight relationships most people carry get
  * a hue each and the rest share a neutral OTHER. NONE is someone whose relationship is unsaid.
+ * The hued slots are `RelationshipHues` in order, so the two lists are the same length.
  */
-enum class HueSlot { ONE, TWO, THREE, FOUR, FIVE, OTHER, NONE }
+enum class HueSlot { ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, OTHER, NONE }
 
 /** One colour group, for the legend, with how many people are drawn in it. */
 data class HueGroup(val slot: HueSlot, val label: String, val count: Int)
@@ -88,7 +89,7 @@ internal fun buildGraph(people: List<TrackedPerson>, connections: List<Connectio
     )
 }
 
-/** The five most-carried relationships get a hue each, in legend order; the rest are OTHER. */
+/** The eight most-carried relationships get a hue each, in legend order; the rest are OTHER. */
 internal fun hueSlots(relationships: List<RelationshipInUse>): Map<String, HueSlot> =
     relationships.mapIndexed { i, relationship ->
         relationship.key to (HUED.getOrNull(i) ?: HueSlot.OTHER)
@@ -120,4 +121,4 @@ internal fun TrackedPerson.toOrbitInput(): OrbitInput {
     }
 }
 
-private val HUED = listOf(HueSlot.ONE, HueSlot.TWO, HueSlot.THREE, HueSlot.FOUR, HueSlot.FIVE)
+private val HUED = HueSlot.entries - HueSlot.OTHER - HueSlot.NONE

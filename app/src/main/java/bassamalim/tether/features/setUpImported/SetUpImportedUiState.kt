@@ -20,6 +20,9 @@ data class SetUpImportedUiState(
      */
     val cadence: CadencePreset = CadencePreset.NEVER,
     val howYouMet: String = "",
+    /** Prefilled from the address book's Organization entry, and correctable here. */
+    val workplace: String = "",
+    val jobTitle: String = "",
     val isSaving: Boolean = false
 ) {
     val canSave get() = !isLoading && !isSaving

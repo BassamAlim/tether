@@ -103,11 +103,20 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
     }
 }
 
+/** Adds where someone works and their role there. Nobody has said yet, so both start empty. */
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `people` ADD COLUMN `workplace` TEXT")
+        db.execSQL("ALTER TABLE `people` ADD COLUMN `jobTitle` TEXT")
+    }
+}
+
 /** Every migration the app ships, in order. */
 val MIGRATIONS = arrayOf(
     MIGRATION_1_2,
     MIGRATION_2_3,
     MIGRATION_3_4,
     MIGRATION_4_5,
-    MIGRATION_5_6
+    MIGRATION_5_6,
+    MIGRATION_6_7
 )

@@ -4,6 +4,7 @@ import bassamalim.tether.core.data.dataSources.room.entities.Connection
 import bassamalim.tether.core.data.dataSources.room.entities.Person
 import bassamalim.tether.core.domain.DueState
 import bassamalim.tether.core.models.TrackedPerson
+import bassamalim.tether.core.ui.theme.RelationshipHues
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -83,8 +84,11 @@ class CircleLayoutTest {
     }
 
     @Test
-    fun `the five most carried relationships get hues and the rest share other`() {
-        val tags = listOf("Family", "Family", "Work", "Work", "School", "Friend", "Gym", "Neighbours", null)
+    fun `the eight most carried relationships get hues and the rest share other`() {
+        val tags = listOf(
+            "Family", "Family", "Family", "Work", "Work",
+            "Book club", "Climbing", "Close friend", "Gym", "Neighbours", "School", "Uni", null
+        )
         val people = tags.mapIndexed { i, tag -> tracked(i + 1L, tag, DueState.InTouch(3)) }
 
         val graph = buildGraph(people, emptyList())
@@ -92,12 +96,26 @@ class CircleLayoutTest {
 
         assertEquals(HueSlot.ONE, slotOf["Family"])
         assertEquals(HueSlot.TWO, slotOf["Work"])
+        assertEquals(HueSlot.SEVEN, slotOf["Neighbours"])
+        assertEquals(HueSlot.EIGHT, slotOf["School"])
         assertEquals(HueSlot.NONE, slotOf[null])
         assertEquals(
-            listOf("Family", "Work", "Friend", "Gym", "Neighbours", "Other", "No relationship"),
+            listOf(
+                "Family", "Work", "Book club", "Climbing", "Close friend", "Gym", "Neighbours",
+                "School", "Other", "No relationship"
+            ),
             graph.groups.map { it.label }
         )
-        assertEquals(HueSlot.OTHER, slotOf["School"])
+        // A ninth relationship is the first to share the neutral.
+        assertEquals(HueSlot.OTHER, slotOf["Uni"])
+    }
+
+    @Test
+    fun `every hued slot has a colour of its own`() {
+        val hued = HueSlot.entries - HueSlot.OTHER - HueSlot.NONE
+
+        assertEquals(RelationshipHues.size, hued.size)
+        assertEquals(RelationshipHues.size, RelationshipHues.toSet().size)
     }
 
     @Test

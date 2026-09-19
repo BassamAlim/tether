@@ -18,6 +18,13 @@ data class Person(
     /** Only for the message action and for people copied in from contacts. */
     val phone: String? = null,
     /**
+     * Where they work and what they do there, each null when unsaid. Columns rather than detail
+     * rows because they're asked for by name — on New person, on the set-up walk, and read off
+     * the address book's Organization — and shown under the name rather than in the card.
+     */
+    val workplace: String? = null,
+    val jobTitle: String? = null,
+    /**
      * Someone with no interactions yet counts from the date they were added, so a new person
      * goes overdue on schedule rather than immediately.
      */

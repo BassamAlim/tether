@@ -18,18 +18,23 @@ class SetUpImportedDomain @Inject constructor(
     suspend fun getPeople(ids: List<Long>): List<Person> = peopleRepository.get(ids)
 
     /**
-     * Only the fields the address book couldn't answer. The person already exists, so this
+     * The fields the address book couldn't answer, plus the ones it could and this screen showed. The person already exists, so this
      * screen never creates anything — walking away leaves them exactly as the import left them.
      */
     suspend fun setUp(
         personId: Long,
         tag: String,
         cadence: CadencePreset,
-        howYouMet: String
+        howYouMet: String,
+        workplace: String,
+        jobTitle: String
     ) {
         relationshipTypesRepository.remember(tag)
         peopleRepository.setTag(personId, tag)
         peopleRepository.setCadence(personId, cadence.days)
+        // Written back whatever they say, so correcting what the address book had — or clearing
+        // it — sticks; the fields opened holding exactly what's stored.
+        peopleRepository.setWork(personId, workplace, jobTitle)
 
         howYouMet.trim()
             .takeIf { it.isNotEmpty() }

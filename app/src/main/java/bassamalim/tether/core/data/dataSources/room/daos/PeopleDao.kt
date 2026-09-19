@@ -74,8 +74,14 @@ interface PeopleDao {
     @Upsert
     suspend fun upsertAll(people: List<Person>): List<Long>
 
+    @Query("UPDATE people SET name = :name WHERE id = :id")
+    suspend fun updateName(id: Long, name: String)
+
     @Query("UPDATE people SET tag = :tag WHERE id = :id")
     suspend fun updateTag(id: Long, tag: String?)
+
+    @Query("UPDATE people SET workplace = :workplace, jobTitle = :jobTitle WHERE id = :id")
+    suspend fun updateWork(id: Long, workplace: String?, jobTitle: String?)
 
     @Query("UPDATE people SET cadenceDays = :cadenceDays WHERE id = :id")
     suspend fun updateCadence(id: Long, cadenceDays: Int?)

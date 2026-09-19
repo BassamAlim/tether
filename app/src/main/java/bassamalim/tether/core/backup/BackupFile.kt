@@ -28,12 +28,16 @@ data class BackupFile(
 ) {
     companion object {
         /**
-         * 4 since relationships became one free-text vocabulary: [BackupPerson.tag] keeps its
-         * type but changes content, from the old enum's constant ("CLOSE_FRIEND") to the label
+         * 5 since people carry where they work ([BackupPerson.workplace], [BackupPerson.jobTitle]).
+         * The fields are optional, so a format-4 file still reads; the bump is so a Tether that
+         * predates them refuses the file rather than quietly dropping everyone's job.
+         *
+         * 4 was when relationships became one free-text vocabulary: [BackupPerson.tag] kept its
+         * type but changed content, from the old enum's constant ("CLOSE_FRIEND") to the label
          * itself ("Close friend"). A reader has no other way to tell the two apart, which is
          * what the number is for.
          */
-        const val FORMAT = 4
+        const val FORMAT = 5
 
         /** Up to and including this, a `tag` is an enum constant rather than a label. */
         const val LAST_ENUM_TAG_FORMAT = 3
@@ -46,6 +50,8 @@ data class BackupPerson(
     val tag: String? = null,
     val cadenceDays: Int? = null,
     val phone: String? = null,
+    val workplace: String? = null,
+    val jobTitle: String? = null,
     val addedOn: String,
     val details: List<BackupDetail> = emptyList(),
     val interactions: List<BackupInteraction> = emptyList()

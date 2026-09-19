@@ -35,7 +35,16 @@ class PeopleRepository @Inject constructor(
 
     suspend fun getAllDetails(): List<PersonDetail> = peopleDao.getAllDetails()
 
+    suspend fun setName(id: Long, name: String) = peopleDao.updateName(id, name.trim())
+
     suspend fun setTag(id: Long, tag: String?) = peopleDao.updateTag(id, tag?.trim()?.ifEmpty { null })
+
+    /** Both at once, since they're edited together; blank means unsaid. */
+    suspend fun setWork(id: Long, workplace: String?, jobTitle: String?) = peopleDao.updateWork(
+        id = id,
+        workplace = workplace?.trim()?.ifEmpty { null },
+        jobTitle = jobTitle?.trim()?.ifEmpty { null }
+    )
 
     suspend fun setCadence(id: Long, cadenceDays: Int?) = peopleDao.updateCadence(id, cadenceDays)
 

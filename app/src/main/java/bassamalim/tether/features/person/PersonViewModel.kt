@@ -16,9 +16,11 @@ import bassamalim.tether.core.nav.Screen
 import bassamalim.tether.core.utils.agoLabel
 import bassamalim.tether.core.utils.cadenceLabel
 import bassamalim.tether.core.utils.initials
+import bassamalim.tether.core.utils.parsePlace
 import bassamalim.tether.core.utils.lastTalkedStatus
 import bassamalim.tether.core.utils.reminderDateLabel
 import bassamalim.tether.core.utils.timeLabel
+import bassamalim.tether.core.utils.workLabel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -127,6 +129,24 @@ class PersonViewModel @Inject constructor(
         viewModelScope.launch { domain.restoreInteraction(interaction) }
     }
 
+    fun onNameClick() = localState.update {
+        it.copy(isMenuOpen = false, isEditingName = true, nameDraft = uiState.value.name)
+    }
+
+    fun onNameDismiss() = localState.update { it.copy(isEditingName = false, nameDraft = "") }
+
+    fun onNameChange(value: String) = localState.update { it.copy(nameDraft = value) }
+
+    /** A typo in a name, or a name that's changed; everything else about them stays put. */
+    fun onNameSave() {
+        val name = localState.value.nameDraft
+        if (name.isBlank()) return
+
+        onNameDismiss()
+
+        viewModelScope.launch { domain.setName(personId, name) }
+    }
+
     fun onTagClick() = localState.update {
         it.copy(isPickingTag = true, tagDraft = uiState.value.tag)
     }
@@ -147,6 +167,32 @@ class PersonViewModel @Inject constructor(
         onTagDismiss()
 
         viewModelScope.launch { domain.setTag(personId, tag) }
+    }
+
+    fun onWorkClick() = localState.update {
+        it.copy(
+            isEditingWork = true,
+            workplaceDraft = uiState.value.workplace,
+            jobTitleDraft = uiState.value.jobTitle
+        )
+    }
+
+    fun onWorkDismiss() = localState.update {
+        it.copy(isEditingWork = false, workplaceDraft = "", jobTitleDraft = "")
+    }
+
+    fun onWorkplaceChange(value: String) = localState.update { it.copy(workplaceDraft = value) }
+
+    fun onJobTitleChange(value: String) = localState.update { it.copy(jobTitleDraft = value) }
+
+    /** Emptying both is how you say they've left; the line disappears rather than reading blank. */
+    fun onWorkSave() {
+        val workplace = localState.value.workplaceDraft
+        val jobTitle = localState.value.jobTitleDraft
+
+        onWorkDismiss()
+
+        viewModelScope.launch { domain.setWork(personId, workplace, jobTitle) }
     }
 
     fun onCadenceClick() = localState.update { it.copy(isPickingCadence = true) }
@@ -225,9 +271,14 @@ class PersonViewModel @Inject constructor(
     private data class LocalState(
         val openHistoryMenuId: Long? = null,
         val tagDraft: String = "",
+        val nameDraft: String = "",
+        val isEditingName: Boolean = false,
         val editingConnectionId: Long? = null,
         val connectionLabel: String = "",
         val isPickingTag: Boolean = false,
+        val isEditingWork: Boolean = false,
+        val workplaceDraft: String = "",
+        val jobTitleDraft: String = "",
         val isPickingCadence: Boolean = false,
         val isMenuOpen: Boolean = false,
         val isConfirmingDelete: Boolean = false
@@ -271,6 +322,11 @@ class PersonViewModel @Inject constructor(
             ),
             isOverdue = dueState is DueState.Slipping,
             phone = person.phone,
+            workplace = person.workplace.orEmpty(),
+            jobTitle = person.jobTitle.orEmpty(),
+            workLabel = workLabel(person.workplace, person.jobTitle),
+            workplaceDraft = local.workplaceDraft,
+            jobTitleDraft = local.jobTitleDraft,
             reminderLabel = reminder?.let {
                 // What and when, in one line: "Coffee · Tomorrow, 19:00".
                 listOfNotNull(
@@ -292,20 +348,23 @@ class PersonViewModel @Inject constructor(
                     )
                 },
             history = history.map { interaction ->
+                val place = parsePlace(interaction.location)
                 HistoryEntry(
                     id = interaction.id,
                     isMenuOpen = interaction.id == local.openHistoryMenuId,
                     title = interaction.type?.label ?: "Caught up",
-                    meta = listOfNotNull(
-                        interaction.initiatedBy?.historyLabel,
-                        interaction.location.takeIf { it.isNotBlank() }
-                    ).joinToString(" · ").takeIf { it.isNotEmpty() },
+                    whoLabel = interaction.initiatedBy?.historyLabel,
+                    placeLabel = place?.label,
+                    placeUrl = place?.url,
                     timeLabel = agoLabel(interaction.occurredOn, today),
                     note = interaction.note.takeIf { it.isNotBlank() }
                 )
             },
             isPickingTag = local.isPickingTag,
+            isEditingName = local.isEditingName,
+            nameDraft = local.nameDraft,
             isPickingCadence = local.isPickingCadence,
+            isEditingWork = local.isEditingWork,
             isMenuOpen = local.isMenuOpen,
             isConfirmingDelete = local.isConfirmingDelete
         )

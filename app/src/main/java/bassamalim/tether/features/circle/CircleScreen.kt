@@ -411,12 +411,9 @@ private fun SelectedCard(person: SelectedPerson, onClick: () -> Unit, modifier: 
     }
 }
 
+/** A hued slot is its own place in [RelationshipHues]; OTHER is neutral and NONE is hollow. */
 private fun hueOf(slot: HueSlot): Color? = when (slot) {
-    HueSlot.ONE -> RelationshipHues[0]
-    HueSlot.TWO -> RelationshipHues[1]
-    HueSlot.THREE -> RelationshipHues[2]
-    HueSlot.FOUR -> RelationshipHues[3]
-    HueSlot.FIVE -> RelationshipHues[4]
     HueSlot.OTHER -> RelationshipOther
     HueSlot.NONE -> null
+    else -> RelationshipHues[slot.ordinal]
 }

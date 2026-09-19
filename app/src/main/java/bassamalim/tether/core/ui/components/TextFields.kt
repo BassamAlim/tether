@@ -20,6 +20,7 @@ import bassamalim.tether.core.ui.theme.Ink
 import bassamalim.tether.core.ui.theme.InkFaint
 import bassamalim.tether.core.ui.theme.Spacing
 import bassamalim.tether.core.ui.theme.Surface200
+import bassamalim.tether.core.ui.theme.TetherType
 
 /** An eyebrow label over a single-line field, as every form in the design draws it. */
 @Composable
@@ -28,7 +29,9 @@ fun LabeledTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    placeholder: String = ""
+    placeholder: String = "",
+    /** A line under the field in the timestamp's voice, e.g. how a pasted link will read. */
+    supportingText: String? = null
 ) {
     Column(modifier) {
         SectionLabel(text = label)
@@ -57,6 +60,15 @@ fun LabeledTextField(
                 textStyle = MaterialTheme.typography.bodyMedium.merge(TextStyle(color = Ink)),
                 cursorBrush = SolidColor(Accent),
                 modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        supportingText?.let {
+            Text(
+                text = it,
+                style = TetherType.Timestamp,
+                color = InkFaint,
+                modifier = Modifier.padding(top = Spacing.xs)
             )
         }
     }

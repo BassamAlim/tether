@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <!-- The weekly nudge. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Naming a pasted Google Maps link, and nothing else: see PlacesRepository. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <!-- BiometricPrompt on cold start, with device credential as the fallback. -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 

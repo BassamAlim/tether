@@ -156,7 +156,8 @@ private fun SheetContent(
             label = "Where",
             value = state.location,
             onValueChange = onLocationChange,
-            placeholder = "Blue Tokai, their place, the office",
+            placeholder = "Blue Tokai, their place, a Maps link",
+            supportingText = state.locationHint,
             modifier = Modifier.padding(top = Spacing.screen)
         )
 

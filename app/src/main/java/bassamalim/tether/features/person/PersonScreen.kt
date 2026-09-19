@@ -43,7 +43,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
@@ -55,6 +61,7 @@ import bassamalim.tether.core.enums.CadencePreset
 import bassamalim.tether.core.ui.components.Avatar
 import bassamalim.tether.core.ui.components.RelationshipField
 import bassamalim.tether.core.ui.components.FilterPill
+import bassamalim.tether.core.ui.components.LabeledTextField
 import bassamalim.tether.core.ui.components.SectionLabel
 import bassamalim.tether.core.ui.components.UndoSnackbar
 import bassamalim.tether.core.utils.internationalDigits
@@ -111,17 +118,27 @@ fun PersonScreen(viewModel: PersonViewModel = hiltViewModel()) {
         state = state,
         snackbarHostState = snackbarHostState,
         onBack = viewModel::onBack,
+        onNameClick = viewModel::onNameClick,
+        onNameChange = viewModel::onNameChange,
+        onNameDismiss = viewModel::onNameDismiss,
+        onNameSave = viewModel::onNameSave,
         onTagClick = viewModel::onTagClick,
         onTagDismiss = viewModel::onTagDismiss,
         onTagChange = viewModel::onTagChange,
         onTagOptionClick = viewModel::onTagOptionClick,
         onTagSave = viewModel::onTagSave,
+        onWorkClick = viewModel::onWorkClick,
+        onWorkplaceChange = viewModel::onWorkplaceChange,
+        onJobTitleChange = viewModel::onJobTitleChange,
+        onWorkDismiss = viewModel::onWorkDismiss,
+        onWorkSave = viewModel::onWorkSave,
         onCadenceClick = viewModel::onCadenceClick,
         onCadenceDismiss = viewModel::onCadenceDismiss,
         onCadenceSelect = viewModel::onCadenceSelect,
         onLogCatchUp = viewModel::onLogCatchUp,
         onReminderClick = viewModel::onReminderClick,
         onMessage = { state.phone?.let { context.openWhatsApp(it) } },
+        onPlaceClick = { context.openLink(it) },
         onHistoryClick = viewModel::onHistoryClick,
         onHistoryMenuOpen = viewModel::onHistoryMenuOpen,
         onHistoryMenuDismiss = viewModel::onHistoryMenuDismiss,
@@ -166,22 +183,44 @@ private fun Context.openWhatsApp(phone: String) {
 
 private const val WHATSAPP = "com.whatsapp"
 
+/**
+ * Opens a catch-up's pasted "Where". A Google Maps link is claimed by the Maps app when it's
+ * installed and falls through to the browser when it isn't; with neither, there's nowhere to go.
+ */
+private fun Context.openLink(url: String) {
+    try {
+        startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
+    } catch (_: ActivityNotFoundException) {
+        // Nothing on the phone opens links.
+    }
+}
+
 @Composable
 private fun PersonScreen(
     state: PersonUiState,
     snackbarHostState: SnackbarHostState,
     onBack: () -> Unit,
+    onNameClick: () -> Unit,
+    onNameChange: (String) -> Unit,
+    onNameDismiss: () -> Unit,
+    onNameSave: () -> Unit,
     onTagClick: () -> Unit,
     onTagDismiss: () -> Unit,
     onTagChange: (String) -> Unit,
     onTagOptionClick: (String) -> Unit,
     onTagSave: () -> Unit,
+    onWorkClick: () -> Unit,
+    onWorkplaceChange: (String) -> Unit,
+    onJobTitleChange: (String) -> Unit,
+    onWorkDismiss: () -> Unit,
+    onWorkSave: () -> Unit,
     onCadenceClick: () -> Unit,
     onCadenceDismiss: () -> Unit,
     onCadenceSelect: (CadencePreset) -> Unit,
     onLogCatchUp: () -> Unit,
     onReminderClick: () -> Unit,
     onMessage: () -> Unit,
+    onPlaceClick: (String) -> Unit,
     onHistoryClick: (Long) -> Unit,
     onHistoryMenuOpen: (Long) -> Unit,
     onHistoryMenuDismiss: () -> Unit,
@@ -211,12 +250,19 @@ private fun PersonScreen(
                     onBack = onBack,
                     onMenuOpen = onMenuOpen,
                     onMenuDismiss = onMenuDismiss,
+                    onEditNameClick = onNameClick,
                     onDeleteClick = onDeleteClick
                 )
             }
 
             item {
-                Identity(state = state, onTagClick = onTagClick, onCadenceClick = onCadenceClick)
+                Identity(
+                    state = state,
+                    onNameClick = onNameClick,
+                    onTagClick = onTagClick,
+                    onWorkClick = onWorkClick,
+                    onCadenceClick = onCadenceClick
+                )
             }
 
             item {
@@ -272,6 +318,7 @@ private fun PersonScreen(
                     isFirst = index == 0,
                     isLast = index == state.history.lastIndex,
                     onClick = { onHistoryClick(entry.id) },
+                    onPlaceClick = onPlaceClick,
                     onMenuOpen = { onHistoryMenuOpen(entry.id) },
                     onMenuDismiss = onHistoryMenuDismiss,
                     onDelete = { onHistoryDelete(entry.id) }
@@ -287,6 +334,16 @@ private fun PersonScreen(
         }
     }
 
+    if (state.isEditingName) {
+        NameDialog(
+            value = state.nameDraft,
+            canSave = state.canSaveName,
+            onValueChange = onNameChange,
+            onDismiss = onNameDismiss,
+            onSave = onNameSave
+        )
+    }
+
     if (state.isPickingTag) {
         RelationshipDialog(
             value = state.tagDraft,
@@ -295,6 +352,17 @@ private fun PersonScreen(
             onOptionClick = onTagOptionClick,
             onDismiss = onTagDismiss,
             onSave = onTagSave
+        )
+    }
+
+    if (state.isEditingWork) {
+        WorkDialog(
+            workplace = state.workplaceDraft,
+            jobTitle = state.jobTitleDraft,
+            onWorkplaceChange = onWorkplaceChange,
+            onJobTitleChange = onJobTitleChange,
+            onDismiss = onWorkDismiss,
+            onSave = onWorkSave
         )
     }
 
@@ -333,6 +401,7 @@ private fun TopBar(
     onBack: () -> Unit,
     onMenuOpen: () -> Unit,
     onMenuDismiss: () -> Unit,
+    onEditNameClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
     Row(
@@ -365,6 +434,14 @@ private fun TopBar(
                 onDismissRequest = onMenuDismiss,
                 containerColor = Surface200
             ) {
+                // Tapping the name does the same; the menu is where it's written down.
+                DropdownMenuItem(
+                    text = {
+                        Text(text = "Edit name", style = MaterialTheme.typography.bodyMedium)
+                    },
+                    onClick = onEditNameClick
+                )
+
                 DropdownMenuItem(
                     text = {
                         Text(
@@ -383,7 +460,9 @@ private fun TopBar(
 @Composable
 private fun Identity(
     state: PersonUiState,
+    onNameClick: () -> Unit,
     onTagClick: () -> Unit,
+    onWorkClick: () -> Unit,
     onCadenceClick: () -> Unit
 ) {
     Column(Modifier.padding(top = Spacing.sm, start = Spacing.screen, end = Spacing.screen)) {
@@ -404,7 +483,9 @@ private fun Identity(
         Text(
             text = state.name,
             style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(top = Spacing.lg)
+            modifier = Modifier
+                .padding(top = Spacing.lg)
+                .clickable(onClickLabel = "Edit name", onClick = onNameClick)
         )
 
         Row(
@@ -428,6 +509,17 @@ private fun Identity(
                 onClick = onCadenceClick
             )
         }
+
+        // Where they work sits with the name rather than in Details: it's how you place
+        // someone, and it's asked for by name on the way in.
+        Text(
+            text = state.workLabel ?: "Add where they work",
+            style = MaterialTheme.typography.bodySmall,
+            color = if (state.workLabel != null) InkMuted else InkFaint,
+            modifier = Modifier
+                .padding(top = 10.dp)
+                .clickable(onClickLabel = "Edit where they work", onClick = onWorkClick)
+        )
 
         Text(
             text = state.status,
@@ -687,6 +779,14 @@ private fun ConnectionDialog(
     )
 }
 
+/**
+ * A place you can open: full Ink over the line's faint ink, and underlined, since colour alone
+ * shouldn't be the only thing saying "tap me" — and lime is spent on the screen's action.
+ */
+private val PlaceLinkStyles = TextLinkStyles(
+    style = SpanStyle(color = Ink, textDecoration = TextDecoration.Underline)
+)
+
 /** A history entry's first line: the menu's touch target, which everything else centres on. */
 private val HistoryHeaderHeight = 28.dp
 
@@ -696,6 +796,7 @@ private fun HistoryRow(
     isFirst: Boolean,
     isLast: Boolean,
     onClick: () -> Unit,
+    onPlaceClick: (String) -> Unit,
     onMenuOpen: () -> Unit,
     onMenuDismiss: () -> Unit,
     onDelete: () -> Unit
@@ -772,8 +873,29 @@ private fun HistoryRow(
             }
 
             // Who and where sit on their own line, in the timestamp's voice: they're
-            // circumstances of the catch-up, not part of what was said.
-            entry.meta?.let { meta ->
+            // circumstances of the catch-up, not part of what was said. A place that came in
+            // as a Maps link reads as its name and opens the map; the rest of the row still
+            // opens the entry for correcting.
+            if (entry.whoLabel != null || entry.placeLabel != null) {
+                val meta = buildAnnotatedString {
+                    entry.whoLabel?.let { append(it) }
+                    entry.placeLabel?.let { place ->
+                        if (entry.whoLabel != null) append(" · ")
+                        val url = entry.placeUrl
+                        if (url == null) {
+                            append(place)
+                        } else {
+                            withLink(
+                                LinkAnnotation.Clickable(
+                                    tag = url,
+                                    styles = PlaceLinkStyles,
+                                    linkInteractionListener = { onPlaceClick(url) }
+                                )
+                            ) { append(place) }
+                        }
+                    }
+                }
+
                 Text(
                     text = meta,
                     style = TetherType.Timestamp,
@@ -843,6 +965,94 @@ private fun HistoryMenu(
             )
         }
     }
+}
+
+@Composable
+private fun NameDialog(
+    value: String,
+    canSave: Boolean,
+    onValueChange: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onSave: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Surface100,
+        title = { Text(text = "Name", style = MaterialTheme.typography.titleMedium) },
+        text = {
+            LabeledTextField(
+                label = "What you call them",
+                value = value,
+                onValueChange = onValueChange
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onSave, enabled = canSave) {
+                Text(
+                    text = "Save",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (canSave) Accent else InkFaint
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = "Cancel", style = MaterialTheme.typography.labelLarge, color = InkMuted)
+            }
+        }
+    )
+}
+
+@Composable
+private fun WorkDialog(
+    workplace: String,
+    jobTitle: String,
+    onWorkplaceChange: (String) -> Unit,
+    onJobTitleChange: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onSave: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Surface100,
+        title = { Text(text = "Work", style = MaterialTheme.typography.titleMedium) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                LabeledTextField(
+                    label = "Works at",
+                    value = workplace,
+                    onValueChange = onWorkplaceChange,
+                    placeholder = "Company, school, hospital"
+                )
+
+                LabeledTextField(
+                    label = "Role",
+                    value = jobTitle,
+                    onValueChange = onJobTitleChange,
+                    placeholder = "What they do there",
+                    modifier = Modifier.padding(top = Spacing.md)
+                )
+
+                Text(
+                    // Leaving is a thing that happens; emptying both is how you record it.
+                    text = "Leave them empty and the line goes away.",
+                    style = TetherType.Caption,
+                    color = InkFaint,
+                    modifier = Modifier.padding(top = Spacing.md)
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onSave) {
+                Text(text = "Save", style = MaterialTheme.typography.labelLarge, color = Accent)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = "Cancel", style = MaterialTheme.typography.labelLarge, color = InkMuted)
+            }
+        }
+    )
 }
 
 @Composable

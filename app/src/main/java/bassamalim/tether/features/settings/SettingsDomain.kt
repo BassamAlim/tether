@@ -69,6 +69,8 @@ class SettingsDomain @Inject constructor(
                     tag = person.tag,
                     cadenceDays = person.cadenceDays,
                     phone = person.phone,
+                    workplace = person.workplace,
+                    jobTitle = person.jobTitle,
                     addedOn = person.addedOn.toString(),
                     details = detailsByPerson[person.id].orEmpty().map {
                         BackupDetail(label = it.label, value = it.value)

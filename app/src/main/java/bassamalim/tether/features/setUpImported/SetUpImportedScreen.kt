@@ -56,6 +56,8 @@ fun SetUpImportedScreen(viewModel: SetUpImportedViewModel = hiltViewModel()) {
         onTagSelect = viewModel::onTagSelect,
         onCadenceSelect = viewModel::onCadenceSelect,
         onHowYouMetChange = viewModel::onHowYouMetChange,
+        onWorkplaceChange = viewModel::onWorkplaceChange,
+        onJobTitleChange = viewModel::onJobTitleChange,
         onSkip = viewModel::onSkip,
         onSave = viewModel::onSave
     )
@@ -68,6 +70,8 @@ private fun SetUpImportedScreen(
     onTagSelect: (String) -> Unit,
     onCadenceSelect: (CadencePreset) -> Unit,
     onHowYouMetChange: (String) -> Unit,
+    onWorkplaceChange: (String) -> Unit,
+    onJobTitleChange: (String) -> Unit,
     onSkip: () -> Unit,
     onSave: () -> Unit
 ) {
@@ -130,6 +134,22 @@ private fun SetUpImportedScreen(
             value = state.howYouMet,
             onValueChange = onHowYouMetChange,
             placeholder = "Where, when, through whom",
+            modifier = Modifier.padding(top = 22.dp, start = Spacing.screen, end = Spacing.screen)
+        )
+
+        LabeledTextField(
+            label = "Works at",
+            value = state.workplace,
+            onValueChange = onWorkplaceChange,
+            placeholder = "Company, school, hospital",
+            modifier = Modifier.padding(top = 22.dp, start = Spacing.screen, end = Spacing.screen)
+        )
+
+        LabeledTextField(
+            label = "Role",
+            value = state.jobTitle,
+            onValueChange = onJobTitleChange,
+            placeholder = "What they do there",
             modifier = Modifier.padding(top = 22.dp, start = Spacing.screen, end = Spacing.screen)
         )
 

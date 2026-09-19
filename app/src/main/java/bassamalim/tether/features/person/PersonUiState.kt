@@ -22,6 +22,14 @@ data class PersonUiState(
     val status: String = "",
     val isOverdue: Boolean = false,
     val phone: String? = null,
+    /** Where they work and what they do, as stored, which is what the editor starts from. */
+    val workplace: String = "",
+    val jobTitle: String = "",
+    /** "Designer at Careem", or null when neither half is known. */
+    val workLabel: String? = null,
+    /** The drafts while work is being rewritten. */
+    val workplaceDraft: String = "",
+    val jobTitleDraft: String = "",
     /** "Coffee · Tomorrow, 19:00", or null when the bell isn't set. */
     val reminderLabel: String? = null,
     val details: List<DetailRow> = emptyList(),
@@ -30,11 +38,17 @@ data class PersonUiState(
     val editingConnection: ConnectionEdit? = null,
     val history: List<HistoryEntry> = emptyList(),
     val isPickingTag: Boolean = false,
+    /** True while the name is being rewritten; [nameDraft] is what's typed so far. */
+    val isEditingName: Boolean = false,
+    val nameDraft: String = "",
     val isPickingCadence: Boolean = false,
+    val isEditingWork: Boolean = false,
     val isMenuOpen: Boolean = false,
     val isConfirmingDelete: Boolean = false
 ) {
     val canMessage get() = !phone.isNullOrBlank()
+
+    val canSaveName get() = nameDraft.isNotBlank()
 }
 
 data class DetailRow(val id: Long, val label: String, val value: String)
@@ -59,11 +73,15 @@ data class HistoryEntry(
     val isMenuOpen: Boolean = false,
     /** The interaction type, or "Caught up" for a one-tap log that didn't ask. */
     val title: String,
+    /** "They reached out", or null when the log didn't say. */
+    val whoLabel: String?,
     /**
-     * Who reached out and where, already joined: "They reached out · Blue Tokai". Null when the
-     * log answered neither, which most one-tap logs don't.
+     * Where, as it should read: "Blue Tokai", or the name pulled out of a pasted Maps link, or
+     * "Dropped pin" when the link carries none. Null when the log didn't say.
      */
-    val meta: String?,
+    val placeLabel: String?,
+    /** The pasted link [placeLabel] opens, or null when "Where" was only words. */
+    val placeUrl: String?,
     val timeLabel: String,
     val note: String?
 )

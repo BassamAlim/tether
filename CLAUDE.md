@@ -6,7 +6,9 @@ Guidance for Claude Code working in this repository.
 
 A personal CRM for Android: the people you care about, how often you mean to reach out, and
 whether you're slipping. It is offline-first by design — no account, no server, no sync. The
-database is the archive, which is why Settings has to be honest about backups.
+database is the archive, which is why Settings has to be honest about backups. The one network
+request it makes is naming a pasted Google Maps link (see the "Where" rule); nothing about a
+person or a catch-up ever leaves the phone.
 
 The UI is designed already. Screens and tokens live in the "Tether — app design" artifact
 (`https://claude.ai/artifact/CA4CURchwDrWwR48eSftee`): boards for People, Catch up, Person
@@ -119,7 +121,8 @@ These are decided; don't re-litigate them in code.
   sits above the form and typing a name out by hand is the fallback. An address book knows how
   to reach someone, not what they are to you, so the import hands straight over to the set-up
   walk (`features/setUpImported`, `Screen.SetUpImported`): one imported person per screen, in
-  People's order, asking for relationship, cadence and how you met. It is a walk rather than one
+  People's order, asking for relationship, cadence, how you met, and where they work (already
+  filled in when the address book said). It is a walk rather than one
   long list because a list gets answered once and rubber-stamped. The rows are already saved
   when it opens, so it never creates anything and Skip — or backing out — costs nothing; anyone
   you skip stays exactly as the import left them, untracked, to be opted in later from their
@@ -182,16 +185,36 @@ These are decided; don't re-litigate them in code.
   and any one of them can be tapped for its own line instead. The shared line is inherited, not
   copied: rewriting it moves everyone who hasn't been singled out, and "Use shared" hands
   someone back. The batch lands in one transaction, so a person is never left half-connected.
-- **Person details are free-form label/value rows** (`PersonDetail`: "Met", "Works at",
-  "Kids"), not fixed columns — what's worth remembering differs per person. Interaction notes are
-  separate, and search covers names, details, notes and where a catch-up happened.
+- **Person details are free-form label/value rows** (`PersonDetail`: "Met", "Kids"), not fixed
+  columns — what's worth remembering differs per person. Interaction notes are
+  separate, and search covers names, work, details, notes and where a catch-up happened.
+- **Where they work is the one detail with its own columns** — `Person.workplace` and
+  `Person.jobTitle`, each null when unsaid, read as one line by `workLabel` in
+  `core/utils/Labels.kt` ("Designer at Careem", "Works at Careem", or just the role). Columns
+  rather than a detail row because it is asked for by name in three places — New person, the
+  set-up walk, and the address book's Organization entry, which is the one fact besides a number
+  that contacts can actually answer — and because it is how you place someone, so it sits under
+  the name on Person detail rather than in the Details card. Tapping that line opens a dialog
+  with both fields (empty both and the line goes away: people leave jobs). It is the only
+  person field besides name, relationship and cadence that can be changed after creation.
 - **A catch-up records where it happened and who reached out** — `Interaction.location`, free
   text and blank when unasked, and `Interaction.initiatedBy` (`Initiator`: ME / THEM, null when
   unasked or when neither did — you ran into each other). The log sheet offers "Where" as a
   field and "Who reached out" as two pills that tap off again; Person detail's history joins
   them into one line under the title ("They reached out · Blue Tokai"). Both are optional: a
   catch-up with neither still resets the clock, and the one-tap log on Catch up stays one tap,
-  so it records neither.
+  so it records neither. "Where" may be a pasted Google Maps link, alone or after a name; it
+  stays one free-text column and is read for showing by `core/utils/Places.kt` (`parsePlace`):
+  words typed beside the link win, then the name inside the link (`/maps/place/…`, `?q=`), then
+  "Dropped pin" for bare coordinates or "Google Maps" for a short link whose name couldn't be
+  had. A short link carries no name, so when one is pasted alone the log sheet asks Google where
+  it redirects (`MapsLinkDataSource`, behind `PlacesRepository` — only the `Location` header is
+  read, with a non-browser User-Agent, since a browser is sent an `intent://` instead) and
+  writes the name into the field in front of the link, where it can still be corrected. Save
+  waits for a lookup in flight; typing over the field wins over a late answer; offline, it
+  simply stays "Google Maps". Reopening an old entry with a bare link looks it up then. History
+  shows the label underlined and opens the link; the sheet says under the field how it will
+  read, and a multi-line Maps share pasted in keeps only its first line and the link.
 - **The nudge is weekly**, not daily — a daily nudge becomes wallpaper within a fortnight. It
   names people rather than counting them (`core/nudge/NudgeCopy.kt`), offers "Tomorrow" so
   dismissing isn't the only way out, and opens the app on Catch up — through the lock if one is
@@ -216,7 +239,7 @@ These are decided; don't re-litigate them in code.
   in touch inside the dashed due ring (further out the more of the cadence has gone by),
   slipping outside it (a whole cadence overdue or more is the rim), untracked apart on the
   outside, dimmed, since they have no clock. It reads `DueState`, so it can't disagree with
-  Catch up. Colour is the relationship: the five most-carried relationships get a hue each, in
+  Catch up. Colour is the relationship: the eight most-carried relationships get a hue each, in
   legend order, and the rest share a neutral Other; someone with no relationship is a hollow
   dot. The hues (`RelationshipHues` in `Color.kt`) are the app's only categorical palette,
   validated in that order for colour-blind separation on `Surface0`, and deliberately hold no
@@ -256,9 +279,13 @@ destination: Cancel/Next on the picker, Back/Save on the labels, with the system
 the same Back so a long selection survives a swipe.
 
 Relationship and cadence can both be changed from Person detail by tapping the chip or the
-cadence line. Name, phone and details are still set-once at creation, and New person collects
-no phone number at all, so the WhatsApp button only lights up for people brought in from
-contacts. An edit flow for the rest is the obvious next gap; logged catch-ups can already be
+cadence line, and the name by tapping it or from "Edit name" in the three-dots menu (a dialog;
+a blank name can't be saved). Renaming rewrites the one row, so history, connections and a
+pending reminder follow it — but a restore matches people by name, so a backup made before a
+rename brings the old name back as a second person. Where they work can be rewritten the same
+way, by tapping the line under the name. Phone and details are still set-once at
+creation, and New person collects no phone number at all, so the WhatsApp button only lights
+up for people brought in from contacts. An edit flow for those is the obvious next gap; logged catch-ups can already be
 edited by tapping them in the history and deleted from the menu on the entry or the sheet.
 
 Per-person reminders are built: `features/reminder` behind the bell on Person detail, with
@@ -268,8 +295,8 @@ Per-person reminders are built: `features/reminder` behind the bell on Person de
 Missing: photos (`Person` has no photo column, so the New person screen's photo button is inert).
 
 Backups go both ways: Settings' **Your data** card is Export a backup and Import a backup, one
-above the other. The file is JSON at format 4 — connections as name pairs and the relationship
-types you added by hand, so it reads without Tether. The format, the reader and the wording both
+above the other. The file is JSON at format 5 — connections as name pairs, the relationship
+types you added by hand, and each person's workplace and role, so it reads without Tether. The format, the reader and the wording both
 screens use live in **`core/backup/`** (`BackupFile.kt`, `BackupRestore.kt`, `BackupLabels.kt`),
 not in `features/settings`, because First run imports too; `SettingsDomain.buildBackup()` still
 writes the file, and writer and reader share one mapping (`Interaction.asBackup` /

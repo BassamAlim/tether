@@ -15,6 +15,22 @@ fun initials(name: String): String = name
     .joinToString("")
     .ifEmpty { "?" }
 
+/**
+ * "Designer at Careem", "Designer", "Works at Careem", or null when neither is known. Blank
+ * counts as unknown, so a half-filled form still reads as a sentence.
+ */
+fun workLabel(workplace: String?, jobTitle: String?): String? {
+    val place = workplace?.trim().orEmpty()
+    val title = jobTitle?.trim().orEmpty()
+
+    return when {
+        place.isEmpty() && title.isEmpty() -> null
+        place.isEmpty() -> title
+        title.isEmpty() -> "Works at $place"
+        else -> "$title at $place"
+    }
+}
+
 /** "every 2 weeks", "every month", "Never". */
 fun cadenceLabel(cadenceDays: Int?): String = when {
     cadenceDays == null -> "Never"

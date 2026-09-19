@@ -25,7 +25,9 @@ class AddPersonDomain @Inject constructor(
         name: String,
         tag: String,
         cadence: CadencePreset,
-        howYouMet: String
+        howYouMet: String,
+        workplace: String,
+        jobTitle: String
     ): Long {
         // A relationship typed here is one you'll reach for again, so it joins the vocabulary.
         relationshipTypesRepository.remember(tag)
@@ -35,6 +37,8 @@ class AddPersonDomain @Inject constructor(
                 name = name.trim(),
                 tag = tag.trim().ifEmpty { null },
                 cadenceDays = cadence.days,
+                workplace = workplace.trim().ifEmpty { null },
+                jobTitle = jobTitle.trim().ifEmpty { null },
                 addedOn = LocalDate.now(clock)
             ),
             details = listOfNotNull(

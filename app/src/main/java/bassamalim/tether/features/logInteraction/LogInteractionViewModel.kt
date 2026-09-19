@@ -10,7 +10,10 @@ import bassamalim.tether.core.enums.InteractionType
 import bassamalim.tether.core.nav.Navigator
 import bassamalim.tether.core.nav.Screen
 import bassamalim.tether.core.utils.initials
+import bassamalim.tether.core.utils.linkToLookUp
+import bassamalim.tether.core.utils.tidyPlaceInput
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,6 +35,9 @@ class LogInteractionViewModel @Inject constructor(
 
     /** The row being corrected, once it's loaded; null while logging something new. */
     private var editing: Interaction? = null
+
+    /** Asking Google what a pasted Maps link is called; Save waits for it. */
+    private var placeLookup: Job? = null
 
     private val _uiState = MutableStateFlow(
         // Today is the only default worth preselecting; guessing how you spoke would write
@@ -69,6 +75,9 @@ class LogInteractionViewModel @Inject constructor(
                         isEditing = true
                     )
                 }
+
+                // An entry saved with a bare link before names were looked up gets one now.
+                lookUpPlace(interaction.location)
             }
         }
     }
@@ -93,7 +102,36 @@ class LogInteractionViewModel @Inject constructor(
         it.copy(initiatedBy = if (it.initiatedBy == value) null else value)
     }
 
-    fun onLocationChange(value: String) = _uiState.update { it.copy(location = value) }
+    fun onLocationChange(value: String) {
+        val location = tidyPlaceInput(value)
+        _uiState.update { it.copy(location = location) }
+        lookUpPlace(location)
+    }
+
+    /**
+     * A Maps link with no name in it gets the place's name written in front of it, in the field,
+     * where it can still be corrected like anything else typed there.
+     */
+    private fun lookUpPlace(location: String) {
+        placeLookup?.cancel()
+
+        val url = linkToLookUp(location)
+        _uiState.update { it.copy(isLookingUpPlace = url != null) }
+        if (url == null) return
+
+        placeLookup = viewModelScope.launch {
+            val name = domain.lookUpPlaceName(url)
+
+            _uiState.update {
+                when {
+                    // Typing over it while it looked means the typing wins.
+                    it.location != location -> it
+                    name == null -> it.copy(isLookingUpPlace = false)
+                    else -> it.copy(location = "$name $url", isLookingUpPlace = false)
+                }
+            }
+        }
+    }
 
     fun onNoteChange(value: String) = _uiState.update { it.copy(note = value) }
 
@@ -113,12 +151,15 @@ class LogInteractionViewModel @Inject constructor(
     }
 
     fun onSave() {
-        val state = _uiState.value
-        if (!state.canSave) return
+        if (!_uiState.value.canSave) return
 
         _uiState.update { it.copy(isSaving = true) }
 
         viewModelScope.launch {
+            // A link pasted a moment ago shouldn't lose its name to a quick Save.
+            placeLookup?.join()
+
+            val state = _uiState.value
             val edited = editing
 
             if (edited == null) {

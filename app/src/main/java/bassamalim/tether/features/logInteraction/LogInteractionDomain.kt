@@ -2,6 +2,7 @@ package bassamalim.tether.features.logInteraction
 
 import bassamalim.tether.core.data.dataSources.room.entities.Interaction
 import bassamalim.tether.core.data.repositories.InteractionsRepository
+import bassamalim.tether.core.data.repositories.PlacesRepository
 import bassamalim.tether.core.domain.TrackedPeople
 import bassamalim.tether.core.enums.Initiator
 import bassamalim.tether.core.enums.InteractionType
@@ -12,7 +13,8 @@ import javax.inject.Inject
 
 class LogInteractionDomain @Inject constructor(
     private val trackedPeople: TrackedPeople,
-    private val interactionsRepository: InteractionsRepository
+    private val interactionsRepository: InteractionsRepository,
+    private val placesRepository: PlacesRepository
 ) {
 
     fun observePerson(id: Long): Flow<TrackedPerson?> = trackedPeople.observe(id)
@@ -38,6 +40,9 @@ class LogInteractionDomain @Inject constructor(
         initiatedBy = initiatedBy,
         note = note.trim()
     )
+
+    /** The name behind a pasted Maps link, or null when it can't be had. */
+    suspend fun lookUpPlaceName(url: String): String? = placesRepository.placeName(url)
 
     suspend fun getInteraction(id: Long): Interaction? = interactionsRepository.get(id)
 

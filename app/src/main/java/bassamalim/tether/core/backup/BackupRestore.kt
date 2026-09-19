@@ -82,6 +82,8 @@ class BackupRestore @Inject constructor(
                         tag = relationship,
                         cadenceDays = person.cadenceDays,
                         phone = person.phone,
+                        workplace = person.workplace,
+                        jobTitle = person.jobTitle,
                         // A file with no readable date still describes a real person; today is
                         // the one day we can be sure they were in Tether.
                         addedOn = person.addedOn.asLocalDate() ?: LocalDate.now(clock)
@@ -102,7 +104,9 @@ class BackupRestore @Inject constructor(
                 val filled = existing.copy(
                     tag = existing.tag ?: relationship,
                     cadenceDays = existing.cadenceDays ?: person.cadenceDays,
-                    phone = existing.phone ?: person.phone
+                    phone = existing.phone ?: person.phone,
+                    workplace = existing.workplace ?: person.workplace,
+                    jobTitle = existing.jobTitle ?: person.jobTitle
                 )
                 if (filled != existing) peopleRepository.save(filled)
 

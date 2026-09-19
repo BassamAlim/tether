@@ -17,8 +17,8 @@ class ImportContactsDomain @Inject constructor(
     suspend fun readContacts(): List<DeviceContact> = contactsRepository.read()
 
     /**
-     * Imported people land with a name, a number and nothing else: an address book knows how to
-     * reach someone, not what they are to you. The relationship, the cadence and how you met are
+     * Imported people land with a name, a number, where they work if the address book says, and
+     * nothing else: an address book knows how to reach someone, not what they are to you. The relationship, the cadence and how you met are
      * asked for straight after, one person at a time, and whoever you walk away from stays
      * untracked rather than half-guessed.
      *
@@ -33,6 +33,8 @@ class ImportContactsDomain @Inject constructor(
                     name = contact.name,
                     cadenceDays = null,
                     phone = contact.phone,
+                    workplace = contact.workplace,
+                    jobTitle = contact.jobTitle,
                     addedOn = today
                 )
             }

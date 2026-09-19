@@ -24,7 +24,7 @@ import bassamalim.tether.core.data.dataSources.room.entities.Reminder
         RelationshipType::class,
         Reminder::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

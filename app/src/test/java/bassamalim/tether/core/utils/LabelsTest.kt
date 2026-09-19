@@ -7,6 +7,14 @@ import java.time.LocalDate
 class LabelsTest {
 
     @Test
+    fun `work reads as one line from whichever half is known`() {
+        assertEquals("Designer at Careem", workLabel(workplace = "Careem", jobTitle = "Designer"))
+        assertEquals("Works at Careem", workLabel(workplace = "Careem", jobTitle = " "))
+        assertEquals("Designer", workLabel(workplace = null, jobTitle = "Designer"))
+        assertEquals(null, workLabel(workplace = "", jobTitle = null))
+    }
+
+    @Test
     fun `an overdue reason names the span and the cadence`() {
         assertEquals(
             "5 weeks past your 2-week check-in",
