@@ -1,5 +1,7 @@
 package bassamalim.tether.features.firstRun
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,13 +16,18 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import bassamalim.tether.core.ui.components.ImportDialog
 import bassamalim.tether.core.ui.theme.Accent
 import bassamalim.tether.core.ui.theme.AccentInk
 import bassamalim.tether.core.ui.theme.Action
@@ -35,19 +42,70 @@ import bassamalim.tether.R
 import androidx.compose.ui.res.painterResource
 
 /**
- * The only screen that has to explain anything: one line on what Tether does, then the two ways
- * in.
+ * The only screen that has to explain anything: one line on what Tether does, then the ways in.
+ *
+ * Restoring a backup is one of them, and has to be, because this is the screen a reinstalled
+ * phone opens on — Settings, where the same import lives, is inside the tab shell the app won't
+ * open until somebody is in Tether. It sits quietly under the other two: it's the rarest way in
+ * and the only one that isn't a beginning.
  */
 @Composable
 fun FirstRunScreen(viewModel: FirstRunViewModel = hiltViewModel()) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
+    val backupLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        // A cancelled picker isn't a failed import, so it says nothing.
+        if (uri == null) return@rememberLauncherForActivityResult
+
+        viewModel.onBackupPicked(
+            runCatching {
+                context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+            }.getOrNull()
+        )
+    }
+
+    LaunchedEffect(state.hasPeople) {
+        if (state.hasPeople) viewModel.onPeopleExist()
+    }
+
+    // An import stacks the picker and the set-up walk over this screen, so it can be returned
+    // to with twenty new people behind it. Saying nothing until the count is in beats flashing
+    // "Nobody here yet" at someone who just added them.
+    if (state.isLoading || state.hasPeople) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Surface0)
+        )
+        return
+    }
+
     FirstRunScreen(
+        state = state,
         onAddPersonClick = viewModel::onAddPersonClick,
-        onImportClick = viewModel::onImportClick
+        onImportContactsClick = viewModel::onImportContactsClick,
+        onImportBackupClick = { backupLauncher.launch(arrayOf("*/*")) }
     )
+
+    state.pendingImport?.let { preview ->
+        ImportDialog(
+            preview = preview,
+            onDismiss = viewModel::onImportDismiss,
+            onConfirm = viewModel::onImportConfirm
+        )
+    }
 }
 
 @Composable
-private fun FirstRunScreen(onAddPersonClick: () -> Unit, onImportClick: () -> Unit) {
+private fun FirstRunScreen(
+    state: FirstRunUiState,
+    onAddPersonClick: () -> Unit,
+    onImportContactsClick: () -> Unit,
+    onImportBackupClick: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -90,7 +148,7 @@ private fun FirstRunScreen(onAddPersonClick: () -> Unit, onImportClick: () -> Un
 
         SecondaryButton(
             label = "Pick from contacts",
-            onClick = onImportClick,
+            onClick = onImportContactsClick,
             modifier = Modifier.padding(top = 10.dp)
         )
 
@@ -103,6 +161,30 @@ private fun FirstRunScreen(onAddPersonClick: () -> Unit, onImportClick: () -> Un
                 .padding(top = 14.dp)
                 .fillMaxWidth()
         )
+
+        Text(
+            text = if (state.isImporting) "Importing…" else "Import a backup",
+            style = MaterialTheme.typography.labelMedium,
+            color = InkMuted,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .padding(top = Spacing.lg)
+                .fillMaxWidth()
+                .clickable(enabled = !state.isImporting, onClick = onImportBackupClick)
+                .padding(vertical = Spacing.sm)
+        )
+
+        state.importProblem?.let { problem ->
+            Text(
+                text = problem,
+                style = TetherType.Caption,
+                color = InkFaint,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .padding(top = Spacing.sm)
+                    .fillMaxWidth()
+            )
+        }
     }
 }
 

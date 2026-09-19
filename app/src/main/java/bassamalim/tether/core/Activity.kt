@@ -22,6 +22,7 @@ import bassamalim.tether.core.nav.Navigation
 import bassamalim.tether.core.nav.Navigator
 import bassamalim.tether.core.nav.Screen
 import bassamalim.tether.core.nudge.Nudges
+import bassamalim.tether.core.reminder.Reminders
 import bassamalim.tether.core.ui.theme.Surface0
 import bassamalim.tether.core.ui.theme.TetherTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -61,7 +62,10 @@ class Activity : FragmentActivity() {
                         .windowInsetsPadding(WindowInsets.safeDrawing)
                 ) {
                     startDestination?.let {
-                        Navigation(navigator = navigator, startDestination = withNudgeTarget(it))
+                        Navigation(
+                            navigator = navigator,
+                            startDestination = withNotificationTarget(it)
+                        )
                     }
                 }
             }
@@ -69,9 +73,23 @@ class Activity : FragmentActivity() {
     }
 
     /**
-     * A nudge opens the app on Catch up, through the lock if there is one, never around it.
+     * A notification opens the app on what it was about, through the lock if there is one,
+     * never around it: a nudge on Catch up, a reminder on the person it named.
+     *
+     * The person is pushed rather than started on — the commands are buffered until navigation
+     * is ready — so back leaves you in the app rather than out of it.
      */
-    private fun withNudgeTarget(destination: Screen): Screen {
+    private fun withNotificationTarget(destination: Screen): Screen {
+        val personId = intent?.getLongExtra(Reminders.EXTRA_OPEN_PERSON, 0) ?: 0
+
+        if (personId != 0L) {
+            return when (destination) {
+                is Screen.Lock -> destination.copy(thenPersonId = personId)
+                is Screen.Main -> destination.also { navigator.navigate(Screen.Person(personId)) }
+                else -> destination
+            }
+        }
+
         val fromNudge = intent?.getBooleanExtra(Nudges.EXTRA_OPEN_CATCH_UP, false) == true
         if (!fromNudge) return destination
 

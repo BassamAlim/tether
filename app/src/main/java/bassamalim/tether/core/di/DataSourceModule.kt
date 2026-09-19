@@ -45,6 +45,12 @@ object DataSourceModule {
     fun provideConnectionsDao(database: AppDatabase) = database.connectionsDao()
 
     @Provides @Singleton
+    fun provideRelationshipTypesDao(database: AppDatabase) = database.relationshipTypesDao()
+
+    @Provides @Singleton
+    fun provideRemindersDao(database: AppDatabase) = database.remindersDao()
+
+    @Provides @Singleton
     fun providePreferencesDataStore(application: Application): DataStore<Preferences> =
         application.preferencesDataStore
 

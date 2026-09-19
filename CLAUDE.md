@@ -113,17 +113,63 @@ These are decided; don't re-litigate them in code.
   covering it, and undo re-inserts that row with its own id rather than logging a new one.
   **Every destructive write offers undo** — the one-tap log on Catch up, and this.
 - **Import is a picker, not a sync.** `READ_CONTACTS` is requested when the button is tapped,
-  people are copied once, and Tether never writes back to the address book.
+  people are copied once, and Tether never writes back to the address book. It is reached from
+  **New person**, not from Settings: copying someone in is a way of adding a person, not a
+  preference, and since most people worth keeping up with are already in your phone, the picker
+  sits above the form and typing a name out by hand is the fallback. An address book knows how
+  to reach someone, not what they are to you, so the import hands straight over to the set-up
+  walk (`features/setUpImported`, `Screen.SetUpImported`): one imported person per screen, in
+  People's order, asking for relationship, cadence and how you met. It is a walk rather than one
+  long list because a list gets answered once and rubber-stamped. The rows are already saved
+  when it opens, so it never creates anything and Skip — or backing out — costs nothing; anyone
+  you skip stays exactly as the import left them, untracked, to be opted in later from their
+  own screen.
+- **A restore merges, and never overwrites.** Importing a backup is not "become this file": the
+  archive on the phone is the live one, and the file may be older, may be from a phone used
+  since, or may be the one you imported ten minutes ago. So people are matched by name, a
+  matched person keeps their own relationship, cadence and number unless the field is empty
+  here, and details and catch-ups are added only where the file holds more copies of an entry
+  than the database does (`missingCopies`, a multiset difference — two coffees on one day are
+  two). Importing the same file twice therefore changes nothing the second time, and an import
+  interrupted halfway can simply be run again. Nothing is ever deleted, which is the only
+  reading of it that doesn't owe the user an undo bar. The cost is that two people who share a
+  name can't be told apart: same-name rows are claimed one at a time in file order. Ids are
+  deliberately not in the file, so names are all a restore has.
+
+  The relationship vocabulary comes back **only as the file recorded it** (`relationshipTypes`),
+  never harvested from the tags and labels the imported rows happen to carry. The list is a
+  decision, not a summary of the data: a word can be deleted from it while the connections that
+  already use it keep using it, and sweeping the incoming labels would quietly put those words
+  back in the pills. A file older than format 4 has no list, so it changes the vocabulary not at
+  all.
 - **The message button opens WhatsApp**, not SMS: it hands WhatsApp the raw number first (so
   WhatsApp matches the contact itself), falls back to `wa.me` with the number in international
   form, and only then to SMS. `com.whatsapp` is declared in the manifest's `<queries>` or
   `setPackage` could never resolve on Android 11+.
-- **The default cadence is "Never"** (`PreferencesRepository`, stored as -1 since DataStore has
-  no null). New and imported people arrive untracked and are opted in per person, rather than
-  the app nagging about everyone you added. Settings offers Never among the defaults.
-- **One relationship tag per person** (`RelationshipTag`), chosen on New person and changeable
-  later by tapping the chip on Person detail. The design offers five; `UNIVERSITY` is a sixth,
-  added on request. People's filter chips stay as designed (All / Slipping / Close / Work).
+- **The cadence always starts at "Never", and there is no setting for it.** New people arrive
+  untracked and are opted in on New person itself, where the cadence picker sits next to the
+  name; imported people are asked the same question one at a time, on the set-up walk that
+  follows the picker, and stay untracked if they aren't answered for. There is deliberately no
+  "cadence for new people" preference: a cadence is a decision
+  about one person, and a stored default either nags you about everyone you wrote down or hides
+  the decision on a screen you visit once.
+- **One relationship vocabulary, and it's the user's.** How you know a person and how two
+  people know each other are the same kind of fact, so they draw on one list rather than two:
+  `RelationshipTypes.DEFAULTS` is where it starts (11 entries: the union of the old per-person
+  tag enum and the old connection suggestions, less "Worked together" and "Studied together" —
+  with one vocabulary for both ends, "Work" and "School"/"University" already say those from
+  either side), and anything typed into either joins it
+  (`relationship_types` table, `RelationshipTypesRepository`). The table holds only what was
+  added, so the built-in list can grow in a later version without fighting stored rows. There is
+  no `RelationshipTag` enum any more — `Person.tag` is the label itself, nullable, one per
+  person, set on New person or by tapping the chip on Person detail. People's filter chips are
+  drawn from the people, not fixed (`features/people/PeopleFilters.kt`): All, then Untracked
+  when anyone's cadence is Never (the to-do list an import leaves behind), then every
+  relationship in use, most people first, matched case-insensitively and each with its count.
+  A label nobody carries has no chip, so none comes back empty. There is no Slipping chip on
+  purpose: the list already leads with that section, and Catch up is a whole tab of it. This
+  departs from the board's fixed All / Slipping / Close / Work. Row chips uppercase the
+  label, and ellipsize, since the list is open-ended and "STUDIED TOGETHER" is long.
 - **Connections are one undirected edge with one shared label.** Who knows who is a row in
   `connections`, stored with the smaller id in `personAId` and a unique index over the pair, so
   connecting A to B and B to A is the same row. The label is free text written to read the same
@@ -131,6 +177,11 @@ These are decided; don't re-litigate them in code.
   a single sentence to keep true instead of two that drift apart. Removing a connection forgets
   only the link; deleting a person cascades theirs away. Connections link people already in
   Tether; there is no such thing as a connection to a name that isn't a person.
+- **Connections are added in batches.** Connect ticks any number of people, then writes one
+  shared label over the lot — that's how they come to mind ("these six are from university") —
+  and any one of them can be tapped for its own line instead. The shared line is inherited, not
+  copied: rewriting it moves everyone who hasn't been singled out, and "Use shared" hands
+  someone back. The batch lands in one transaction, so a person is never left half-connected.
 - **Person details are free-form label/value rows** (`PersonDetail`: "Met", "Works at",
   "Kids"), not fixed columns — what's worth remembering differs per person. Interaction notes are
   separate, and search covers names, details, notes and where a catch-up happened.
@@ -146,6 +197,20 @@ These are decided; don't re-litigate them in code.
   dismissing isn't the only way out, and opens the app on Catch up — through the lock if one is
   set, never around it. It is scheduled as self-rescheduling one-time work rather than periodic
   work, because a periodic job's flex window drifts off the hour the user chose.
+- **A reminder is one moment about one person**, separate from the cadence: the cadence is the
+  standing arrangement the weekly nudge speaks for, a reminder is the thing you thought of just
+  now ("coffee with Maya, Saturday at seven"). The bell on Person detail opens
+  `Screen.Reminder(personId)`, which asks for a catch-up type (optional, as on the log sheet)
+  and a day and time, and Person detail shows what's set under a **Reminder** header. At most
+  one per person — a unique index on `reminders.personId` says so — because a bell is either
+  set or it isn't; setting a new one replaces it. **A reminder is spent when it arrives**: the
+  worker posts it and deletes the row, so nothing quietly re-reminds you. It is stored as wall
+  clock, not an instant, so seven in the evening survives a flight, and it is booked as one-time
+  work named `reminder_<personId>`, re-synced on every launch (`ReminderScheduler.syncAll()`) for
+  the cases WorkManager can't survive on its own. Notifications live on their own channel, so you
+  can keep the reminders you asked for and refuse the standing nudge. Tapping one opens the app
+  on that person — pushed on top of the tabs, through the lock if one is set, never around it.
+  Reminders are deliberately **not** in the backup: they're pending intentions, not the archive.
 - **Lock** is `BiometricPrompt` on cold start and after 60s in the background, with device
   credential as the fallback. It stops someone picking up an unlocked phone; it is not encryption
   at rest, and the UI should not imply otherwise. The rule lives in `core/lock/LockManager`
@@ -160,9 +225,20 @@ Every designed screen is built: **People**, **New person**, **Catch up** (one-ta
 bar), **Person detail**, **Log a catch-up**, **Search**, **Settings**, **First run**, **From
 contacts** and **Locked**.
 
+Adding someone starts on **New person**, which opens with "Pick from contacts" and the form
+below it. Choosing contacts replaces the form rather than stacking over it (the picker is a
+different route to the same place), the picker leaves the stack as the set-up walk opens (the
+copying has happened; coming back to a still-ticked list would only invite importing the same
+people twice), and the walk pops back to wherever the whole thing started. First run steps
+aside to People from the screen rather than from its ViewModel, so that an import adding people
+underneath an open picker doesn't pop the flow away mid-walk, and it renders nothing until the
+count is in rather than flashing "Nobody here yet" at someone who just imported twenty people.
+
 Connections are built: Person detail carries a **Connections** section under Details — tapping a
 row walks to that person, the button on it edits or removes the link — and the **Connect** screen
-(`features/connect`, `Screen.Connect`) picks the other person and asks for the label.
+(`features/connect`, `Screen.Connect`) ticks people, then labels them. Its two steps live on one
+destination: Cancel/Next on the picker, Back/Save on the labels, with the system gesture wired to
+the same Back so a long selection survives a swipe.
 
 Relationship and cadence can both be changed from Person detail by tapping the chip or the
 cadence line. Name, phone and details are still set-once at creation, and New person collects
@@ -170,10 +246,31 @@ no phone number at all, so the WhatsApp button only lights up for people brought
 contacts. An edit flow for the rest is the obvious next gap; logged catch-ups can already be
 edited by tapping them in the history and deleted from the menu on the entry or the sheet.
 
-Missing: per-person reminders (the bell on Person detail is deliberately disabled), and photos
-(`Person` has no photo column, so the New person screen's photo button is inert). Backup export
-writes JSON (format 3, connections included as name pairs so the file reads without Tether);
-there is no import of that file yet.
+Per-person reminders are built: `features/reminder` behind the bell on Person detail, with
+`core/reminder/` holding the channel, the scheduler, the worker and the copy — the same shape as
+`core/nudge/`.
+
+Missing: photos (`Person` has no photo column, so the New person screen's photo button is inert).
+
+Backups go both ways: Settings' **Your data** card is Export a backup and Import a backup, one
+above the other. The file is JSON at format 4 — connections as name pairs and the relationship
+types you added by hand, so it reads without Tether. The format, the reader and the wording both
+screens use live in **`core/backup/`** (`BackupFile.kt`, `BackupRestore.kt`, `BackupLabels.kt`),
+not in `features/settings`, because First run imports too; `SettingsDomain.buildBackup()` still
+writes the file, and writer and reader share one mapping (`Interaction.asBackup` /
+`BackupInteraction.asRow`) so that what a restore compares is exactly what an export wrote.
+
+**First run offers a restore as well**, quietly under its two buttons, and has to: Settings is
+inside the tab shell, which the app only opens once somebody is in Tether, so on a reinstalled
+phone First run is the only door. The confirm dialog is shared
+(`core/ui/components/ImportDialog.kt`). It says what the file holds rather than only its name,
+because a backup's name is a date and two of them look alike. On First run a restore that works
+announces itself by filling the app — the screen steps aside to People the moment there are
+people — so only a file that couldn't be used says anything out loud; Settings, which stays put,
+reports the counts in a snackbar. Both pickers accept any mime type, because a file that came
+back off a desktop or out of a chat app is routinely offered as `text/plain`, and an unreadable
+one is caught by the reader a moment later. A file from a later format is refused rather than
+half-read.
 
 The weekly nudge is built: `App` supplies Hilt's `HiltWorkerFactory` to WorkManager (so the
 manifest removes `WorkManagerInitializer`), `NudgeScheduler.sync()` runs on every launch and
@@ -186,12 +283,23 @@ land at that same 44% on screen; copying the asset's 0.75 renders the mark half 
 large. Background is surface-0 full bleed (the launcher mask supplies the corners), plus a
 monochrome layer for themed icons. The same mark is the notification's small icon.
 
-Connections have no board — the design predates them — so Connect follows New person's shape
-(Cancel / title / lime Save, then fields) and the Connections rows follow People's.
+Neither Connect nor the set-up walk has a board — the design predates both — so Connect follows
+New person's shape
+(Cancel / title / lime action, then fields), its picker rows follow From contacts' ticked rows
+(the tick itself is now shared as `core/ui/components/SelectionTick`), and the Connections rows
+on Person detail follow People's. Naming a link is one control everywhere it happens —
+`core/ui/components/RelationshipField`, the field plus the vocabulary — so the usual answers are
+always a tap away and typing is never the only way in. It is the same control on New person, Set
+up imported, Person detail's relationship and connection dialogs, and both of Connect's steps. The set-up walk borrows the same shape
+(Skip / "2 of 5" / lime Next, then Person detail's monogram header over New person's pickers).
 
-Three places the implementation reads differently from the boards, all deliberate: the log sheet
+Five places the implementation reads differently from the boards, all deliberate: the log sheet
 is a `ModalBottomSheet` on its own nav destination, so its scrim covers the app background
 rather than the screen you came from (no M3 `bottomSheet` destination exists to fix this); the
-contacts picker shows real phone numbers where the mock masks them; and People's search field is
+contacts picker shows real phone numbers where the mock masks them; People's search field is
 a button that opens Search rather than filtering the list inline, so there is one search in the
-app rather than two. People's filter chips still filter in place.
+app rather than two; People's filter chips are the relationships in use plus Untracked, in a
+row that scrolls sideways, rather than the board's fixed four (they still filter in place); and
+Settings' nudge is one row rather than a switch over a "Nudge me on" row — "Weekly nudge" over
+"Sundays at 10:00 AM" (or "Off"), the text opening the schedule and a switch beside it, since
+both only ever described one thing. Picking a time while it's off turns it on.

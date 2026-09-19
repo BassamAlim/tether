@@ -30,6 +30,10 @@ interface InteractionsDao {
     @Insert
     suspend fun insert(interaction: Interaction): Long
 
+    /** A restored backup's catch-ups, in one transaction: new rows with new ids. */
+    @Insert
+    suspend fun insertAll(interactions: List<Interaction>)
+
     /** Corrections: the row keeps its id, so the timeline doesn't gain an entry. */
     @Update
     suspend fun update(interaction: Interaction)

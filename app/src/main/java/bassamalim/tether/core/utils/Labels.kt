@@ -1,7 +1,10 @@
 package bassamalim.tether.core.utils
 
 import java.time.LocalDate
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import java.util.Locale
 
 /** The two-letter monogram a row shows instead of a photo. */
 fun initials(name: String): String = name
@@ -19,15 +22,6 @@ fun cadenceLabel(cadenceDays: Int?): String = when {
     cadenceDays % 30 == 0 -> every(cadenceDays / 30, "month")
     cadenceDays % 7 == 0 -> every(cadenceDays / 7, "week")
     else -> every(cadenceDays, "day")
-}
-
-/** How a cadence reads as a settings value: "Weekly", "Every 2 weeks", "Monthly", "Never". */
-fun cadenceValueLabel(cadenceDays: Int?): String = when (cadenceDays) {
-    null -> "Never"
-    7 -> "Weekly"
-    30 -> "Monthly"
-    365 -> "Yearly"
-    else -> cadenceLabel(cadenceDays).replaceFirstChar { it.uppercase() }
 }
 
 /** The adjective form of a cadence: "weekly", "2-week", "monthly", "3-month". */
@@ -114,3 +108,20 @@ private fun every(count: Int, unit: String) =
 
 private fun count(count: Long, unit: String) =
     if (count == 1L) "1 $unit" else "$count ${unit}s"
+
+/** How a reminder's day reads: "Tomorrow", "Sat 27 Sep", "Sat 27 Sep 2027". */
+fun reminderDateLabel(date: LocalDate, today: LocalDate): String = when (date) {
+    today -> "Today"
+    today.plusDays(1) -> "Tomorrow"
+    else -> date.format(
+        if (date.year == today.year) reminderDayFormat else reminderDayYearFormat
+    )
+}
+
+/** The 12-hour clock ("7:00 PM"), as the pickers set it. */
+fun timeLabel(time: LocalTime): String = time.format(clockFormat)
+
+private val reminderDayFormat = DateTimeFormatter.ofPattern("EEE d MMM")
+private val reminderDayYearFormat = DateTimeFormatter.ofPattern("EEE d MMM yyyy")
+// Pinned to English so the period reads "PM" as the dial does, not "pm" or "p.m." by region.
+private val clockFormat = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH)

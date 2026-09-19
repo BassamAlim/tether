@@ -3,10 +3,13 @@ package bassamalim.tether.features.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import bassamalim.tether.BuildConfig
-import bassamalim.tether.core.enums.CadencePreset
+import bassamalim.tether.core.backup.BackupFile
+import bassamalim.tether.core.backup.BackupRead
+import bassamalim.tether.core.backup.ImportPreview
+import bassamalim.tether.core.backup.previewOf
+import bassamalim.tether.core.backup.restoreSummary
 import bassamalim.tether.core.nav.Navigator
-import bassamalim.tether.core.nav.Screen
-import bassamalim.tether.core.utils.cadenceValueLabel
+import bassamalim.tether.core.utils.timeLabel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +22,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 import java.util.Locale
 import javax.inject.Inject
 
@@ -29,7 +31,14 @@ class SettingsViewModel @Inject constructor(
     private val navigator: Navigator
 ) : ViewModel() {
 
-    private val dialogs = MutableStateFlow(Dialogs())
+    /** What this screen owns rather than the database: its dialogs and its in-flight import. */
+    private val localState = MutableStateFlow(LocalState())
+
+    /**
+     * The parsed file behind [LocalState.pendingImport], held here rather than in the state: the
+     * state carries what the dialog says, and this is what Import would write.
+     */
+    private var picked: BackupFile? = null
 
     private val _events = Channel<SettingsEvent>()
     val events = _events.receiveAsFlow()
@@ -38,28 +47,18 @@ class SettingsViewModel @Inject constructor(
         domain.observeNudgeEnabled(),
         domain.observeNudgeDay(),
         domain.observeNudgeTime(),
-        domain.observeNudgeOnlyWhenOverdue(),
-        domain.observeDefaultCadenceDays(),
-        dialogs
-    ) { values ->
-        val enabled = values[0] as Boolean
-        val day = values[1] as DayOfWeek
-        val time = values[2] as LocalTime
-        val onlyWhenOverdue = values[3] as Boolean
-        val cadenceDays = values[4] as Int?
-        val open = values[5] as Dialogs
-
+        localState
+    ) { enabled, day, time, local ->
+        // Four flows fit the typed overload, so the state reads without casting an array.
         SettingsUiState(
             nudgeEnabled = enabled,
             nudgeDay = day,
             nudgeTime = time,
-            nudgeScheduleLabel = "${day.label()}, ${time.format(clockFormat)}",
-            nudgeOnlyWhenOverdue = onlyWhenOverdue,
-            defaultCadence = CadencePreset.of(cadenceDays),
-            defaultCadenceLabel = cadenceValueLabel(cadenceDays),
+            nudgeScheduleLabel = if (enabled) "${day.label()}s at ${timeLabel(time)}" else "Off",
             version = BuildConfig.VERSION_NAME,
-            isPickingSchedule = open.schedule,
-            isPickingCadence = open.cadence
+            isPickingSchedule = local.isPickingSchedule,
+            pendingImport = local.pendingImport,
+            isImporting = local.isImporting
         )
     }.stateIn(
         scope = viewModelScope,
@@ -71,27 +70,13 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { domain.setNudgeEnabled(enabled) }
     }
 
-    fun onNudgeOnlyWhenOverdueChange(enabled: Boolean) {
-        viewModelScope.launch { domain.setNudgeOnlyWhenOverdue(enabled) }
-    }
+    fun onScheduleClick() = localState.update { it.copy(isPickingSchedule = true) }
 
-    fun onScheduleClick() = dialogs.update { it.copy(schedule = true) }
-
-    fun onScheduleDismiss() = dialogs.update { it.copy(schedule = false) }
+    fun onScheduleDismiss() = localState.update { it.copy(isPickingSchedule = false) }
 
     fun onScheduleChange(day: DayOfWeek, time: LocalTime) {
-        dialogs.update { it.copy(schedule = false) }
+        localState.update { it.copy(isPickingSchedule = false) }
         viewModelScope.launch { domain.setNudgeSchedule(day, time) }
-    }
-
-    fun onCadenceClick() = dialogs.update { it.copy(cadence = true) }
-
-    fun onCadenceDismiss() = dialogs.update { it.copy(cadence = false) }
-
-    fun onCadenceChange(preset: CadencePreset) {
-        dialogs.update { it.copy(cadence = false) }
-
-        viewModelScope.launch { domain.setDefaultCadenceDays(preset.days) }
     }
 
     fun backupFileName(): String = domain.backupFileName()
@@ -104,16 +89,55 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun onImportClick() = navigator.navigate(Screen.ImportContacts)
+    /**
+     * The screen hands over the file's text, or null if it couldn't be read at all. Nothing is
+     * written yet: this only works out what the file is, so the dialog can say so.
+     */
+    fun onImportPicked(json: String?) {
+        if (json == null) return report(SettingsEvent.BackupUnreadable)
 
-    private data class Dialogs(
-        val schedule: Boolean = false,
-        val cadence: Boolean = false
+        when (val read = domain.readBackup(json)) {
+            is BackupRead.Readable -> {
+                picked = read.file
+                localState.update { it.copy(pendingImport = previewOf(read.file)) }
+            }
+
+            BackupRead.Unreadable -> report(SettingsEvent.BackupUnreadable)
+
+            is BackupRead.TooNew -> report(SettingsEvent.BackupTooNew)
+        }
+    }
+
+    fun onImportDismiss() {
+        picked = null
+        localState.update { it.copy(pendingImport = null) }
+    }
+
+    fun onImportConfirm() {
+        val file = picked ?: return
+
+        picked = null
+        localState.update { it.copy(pendingImport = null, isImporting = true) }
+
+        viewModelScope.launch {
+            val result = domain.restoreBackup(file)
+
+            localState.update { it.copy(isImporting = false) }
+            report(SettingsEvent.BackupRestored(restoreSummary(result)))
+        }
+    }
+
+    private fun report(event: SettingsEvent) {
+        viewModelScope.launch { _events.send(event) }
+    }
+
+    private data class LocalState(
+        val isPickingSchedule: Boolean = false,
+        val pendingImport: ImportPreview? = null,
+        val isImporting: Boolean = false
     )
 
     private companion object {
-        val clockFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-
         fun DayOfWeek.label() = getDisplayName(
             java.time.format.TextStyle.FULL,
             Locale.getDefault()

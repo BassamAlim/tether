@@ -5,7 +5,6 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,10 +15,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -38,7 +35,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import bassamalim.tether.core.ui.components.Avatar
 import bassamalim.tether.core.ui.components.SearchField
-import bassamalim.tether.core.ui.theme.Accent
+import bassamalim.tether.core.ui.components.SelectionTick
 import bassamalim.tether.core.ui.theme.AccentInk
 import bassamalim.tether.core.ui.theme.Action
 import bassamalim.tether.core.ui.theme.Ink
@@ -50,8 +47,6 @@ import bassamalim.tether.core.ui.theme.Surface0
 import bassamalim.tether.core.ui.theme.Surface100
 import bassamalim.tether.core.ui.theme.Surface300
 import bassamalim.tether.core.ui.theme.TetherType
-import bassamalim.tether.R
-import androidx.compose.ui.res.painterResource
 
 @Composable
 fun ImportContactsScreen(viewModel: ImportContactsViewModel = hiltViewModel()) {
@@ -256,36 +251,7 @@ private fun ContactRow(contact: ContactRow, onClick: () -> Unit) {
             }
         }
 
-        Tick(isSelected = contact.isSelected)
-    }
-}
-
-@Composable
-private fun Tick(isSelected: Boolean) {
-    Box(
-        modifier = Modifier
-            .size(26.dp)
-            .then(
-                if (isSelected) Modifier.background(
-                    color = Accent,
-                    shape = MaterialTheme.shapes.extraSmall
-                )
-                else Modifier.border(
-                    width = 2.dp,
-                    color = Surface300,
-                    shape = MaterialTheme.shapes.extraSmall
-                )
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        if (isSelected) {
-            Icon(
-                painter = painterResource(R.drawable.ic_check),
-                contentDescription = null,
-                tint = AccentInk,
-                modifier = Modifier.size(16.dp)
-            )
-        }
+        SelectionTick(isSelected = contact.isSelected)
     }
 }
 
@@ -305,12 +271,8 @@ private fun BottomBar(state: ImportContactsUiState, onImport: () -> Unit) {
 
         Column(Modifier.padding(start = Spacing.screen, end = Spacing.screen, top = Spacing.lg, bottom = 28.dp)) {
             Text(
-                text =
-                    if (state.hasDefaultCadence)
-                        "They'll start on your default cadence (${state.cadenceLabel}), and " +
-                                "you can change any of them afterwards."
-                    else "They'll start without a cadence, so Tether won't nudge you about " +
-                            "them until you set one.",
+                text = "Next you'll go through them one at a time, to say what each of them " +
+                        "is to you and how often you'd like to be in touch.",
                 style = TetherType.Caption,
                 color = InkFaint
             )

@@ -4,7 +4,6 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import bassamalim.tether.core.data.dataSources.room.entities.Person
 import bassamalim.tether.core.nav.Navigator
 import bassamalim.tether.core.nav.Screen
 import bassamalim.tether.core.utils.initials
@@ -32,21 +31,52 @@ class ConnectViewModel @Inject constructor(
     val uiState: StateFlow<ConnectUiState> = combine(
         domain.observeName(personId),
         domain.observeCandidates(personId),
+        domain.observeRelationshipOptions(),
         localState
-    ) { name, candidates, local ->
-        val matching = candidates
-            .filter { local.query.isBlank() || it.name.contains(local.query, ignoreCase = true) }
-            .map { it.toCandidate() }
+    ) { name, candidates, options, local ->
+        // Picks are read back out of the live list, in its order, so someone deleted mid-flow
+        // drops out rather than lingering as a stale copy, and the two steps agree on order.
+        val picks = candidates
+            .filter { it.id in local.selectedIds }
+            .map { person ->
+                val ownLabel = local.ownLabels[person.id]
+                val label = ownLabel ?: local.sharedLabel
+
+                ConnectPick(
+                    id = person.id,
+                    name = person.name,
+                    initials = initials(person.name),
+                    label = label,
+                    subtitle = label.ifBlank { "No label" },
+                    hasOwnLabel = ownLabel != null
+                )
+            }
 
         ConnectUiState(
             isLoading = false,
             personName = name.orEmpty(),
             query = local.query,
-            candidates = matching,
-            // Read back from the live list, so a selected person who is deleted mid-flow drops
-            // out rather than lingering as a stale copy.
-            selected = candidates.firstOrNull { it.id == local.selectedId }?.toCandidate(),
-            label = local.label
+            relationshipOptions = options,
+            candidates = candidates
+                .filter { local.query.isBlank() || it.name.contains(local.query, true) }
+                .map { person ->
+                    ConnectCandidate(
+                        id = person.id,
+                        name = person.name,
+                        initials = initials(person.name),
+                        tagLabel = person.tag?.uppercase(),
+                        isSelected = person.id in local.selectedIds
+                    )
+                },
+            // Everyone unpicking themselves drops you back to the list rather than stranding
+            // you on a label step with nobody to label.
+            isLabelling = local.isLabelling && picks.isNotEmpty(),
+            sharedLabel = local.sharedLabel,
+            picks = picks,
+            editing = picks.firstOrNull { it.id == local.editingId }?.let { pick ->
+                // The draft is the local one, so typing isn't overwritten by the flow.
+                ConnectPickEdit(id = pick.id, name = pick.name, label = local.editingLabel)
+            }
         )
     }.stateIn(
         scope = viewModelScope,
@@ -56,40 +86,78 @@ class ConnectViewModel @Inject constructor(
 
     fun onQueryChange(value: String) = localState.update { it.copy(query = value) }
 
-    fun onSelect(id: Long) = localState.update { it.copy(selectedId = id) }
+    /** Unpicking someone forgets the line you wrote for them; re-picking starts clean. */
+    fun onToggle(id: Long) = localState.update { local ->
+        if (id in local.selectedIds) local.copy(
+            selectedIds = local.selectedIds - id,
+            ownLabels = local.ownLabels - id
+        )
+        else local.copy(selectedIds = local.selectedIds + id)
+    }
 
-    /** Backing out of the label step returns to the list rather than leaving the screen. */
-    fun onClearSelection() = localState.update { it.copy(selectedId = null) }
+    fun onNext() {
+        if (localState.value.selectedIds.isEmpty()) return
 
-    fun onLabelChange(value: String) = localState.update { it.copy(label = value) }
+        localState.update { it.copy(isLabelling = true) }
+    }
+
+    /** Back steps within the screen before it leaves it, so a long selection isn't lost. */
+    fun onBack() {
+        if (uiState.value.isLabelling) localState.update { it.copy(isLabelling = false) }
+        else navigator.popBackStack()
+    }
+
+    fun onSharedLabelChange(value: String) = localState.update { it.copy(sharedLabel = value) }
 
     /** Tapping the suggestion you already chose clears it, the way the tag chips do. */
     fun onSuggestionClick(suggestion: String) = localState.update {
-        it.copy(label = if (it.label == suggestion) "" else suggestion)
+        it.copy(sharedLabel = if (it.sharedLabel == suggestion) "" else suggestion)
     }
 
-    fun onCancel() = navigator.popBackStack()
+    fun onPickClick(pick: ConnectPick) = localState.update {
+        it.copy(editingId = pick.id, editingLabel = pick.label)
+    }
+
+    fun onPickLabelChange(value: String) = localState.update { it.copy(editingLabel = value) }
+
+    fun onPickSuggestionClick(suggestion: String) = localState.update {
+        it.copy(editingLabel = if (it.editingLabel == suggestion) "" else suggestion)
+    }
+
+    fun onPickEditDismiss() =
+        localState.update { it.copy(editingId = null, editingLabel = "") }
+
+    fun onPickLabelSave() = localState.update {
+        val id = it.editingId ?: return@update it
+
+        it.copy(ownLabels = it.ownLabels + (id to it.editingLabel), editingId = null, editingLabel = "")
+    }
+
+    /** Handing someone back to the shared line, rather than blanking their own to mean the same. */
+    fun onPickUseSharedLabel() = localState.update {
+        val id = it.editingId ?: return@update it
+
+        it.copy(ownLabels = it.ownLabels - id, editingId = null, editingLabel = "")
+    }
 
     fun onSave() {
-        val state = uiState.value
-        val other = state.selected ?: return
+        val picks = uiState.value.picks
+        if (picks.isEmpty()) return
 
         viewModelScope.launch {
-            domain.connect(personId = personId, otherId = other.id, label = state.label)
+            domain.connectAll(personId, picks.associate { it.id to it.label })
             navigator.popBackStack()
         }
     }
 
     private data class LocalState(
         val query: String = "",
-        val selectedId: Long? = null,
-        val label: String = ""
-    )
-
-    private fun Person.toCandidate() = ConnectCandidate(
-        id = id,
-        name = name,
-        initials = initials(name),
-        tagLabel = tag?.chipLabel
+        val selectedIds: Set<Long> = emptySet(),
+        val isLabelling: Boolean = false,
+        val sharedLabel: String = "",
+        /** Only the people given a line of their own; everyone else follows [sharedLabel]. */
+        val ownLabels: Map<Long, String> = emptyMap(),
+        val editingId: Long? = null,
+        val editingLabel: String = ""
     )
 }

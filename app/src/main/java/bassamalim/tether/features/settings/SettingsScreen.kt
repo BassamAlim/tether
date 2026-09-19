@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import bassamalim.tether.core.enums.CadencePreset
+import bassamalim.tether.core.ui.components.ImportDialog
 import bassamalim.tether.core.ui.components.SectionLabel
 import bassamalim.tether.core.ui.theme.Accent
 import bassamalim.tether.core.ui.theme.AccentInk
@@ -81,16 +82,47 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
         }
     }
 
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        // A cancelled picker isn't a failed import, so it says nothing.
+        if (uri == null) return@rememberLauncherForActivityResult
+
+        viewModel.onImportPicked(
+            runCatching {
+                context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+            }.getOrNull()
+        )
+    }
+
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             val message = when (event) {
                 is SettingsEvent.BackupWritten ->
                     if (event.succeeded) "Backup saved." else "Couldn't write that backup."
+
+                is SettingsEvent.BackupRestored -> event.summary
+
+                SettingsEvent.BackupUnreadable -> "That doesn't look like a Tether backup."
+
+                SettingsEvent.BackupTooNew ->
+                    "That backup was written by a newer Tether than this one."
             }
 
             snackbarHostState.currentSnackbarData?.dismiss()
             snackbarHostState.showSnackbar(message)
         }
+    }
+
+    // Asked whenever the nudge is switched on, by the switch or by picking a time.
+    val requestNotifications = {
+        val needsPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+
+        if (needsPermission) notificationsLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
     Scaffold(
@@ -102,23 +134,22 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             modifier = Modifier.padding(innerPadding),
             onNudgeEnabledChange = { enabled ->
                 viewModel.onNudgeEnabledChange(enabled)
-
-                val needsPermission = enabled &&
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                        ContextCompat.checkSelfPermission(
-                            context,
-                            Manifest.permission.POST_NOTIFICATIONS
-                        ) != PackageManager.PERMISSION_GRANTED
-
-                if (needsPermission) {
-                    notificationsLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                }
+                if (enabled) requestNotifications()
             },
             onScheduleClick = viewModel::onScheduleClick,
-            onNudgeOnlyWhenOverdueChange = viewModel::onNudgeOnlyWhenOverdueChange,
-            onCadenceClick = viewModel::onCadenceClick,
             onExportClick = { exportLauncher.launch(viewModel.backupFileName()) },
-            onImportClick = viewModel::onImportClick
+            // Anything, rather than application/json: a backup that came back off a desktop or
+            // out of a chat app is routinely handed to the picker as text/plain or octet-stream,
+            // and a file the reader can't parse is caught a moment later anyway.
+            onImportClick = { importLauncher.launch(arrayOf("*/*")) }
+        )
+    }
+
+    state.pendingImport?.let { preview ->
+        ImportDialog(
+            preview = preview,
+            onDismiss = viewModel::onImportDismiss,
+            onConfirm = viewModel::onImportConfirm
         )
     }
 
@@ -127,17 +158,13 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             day = state.nudgeDay,
             time = state.nudgeTime,
             onDismiss = viewModel::onScheduleDismiss,
-            onConfirm = viewModel::onScheduleChange
+            onConfirm = { day, time ->
+                viewModel.onScheduleChange(day, time)
+                requestNotifications()
+            }
         )
     }
 
-    if (state.isPickingCadence) {
-        CadenceDialog(
-            selected = state.defaultCadence,
-            onDismiss = viewModel::onCadenceDismiss,
-            onSelect = viewModel::onCadenceChange
-        )
-    }
 }
 
 @Composable
@@ -146,8 +173,6 @@ private fun SettingsContent(
     modifier: Modifier = Modifier,
     onNudgeEnabledChange: (Boolean) -> Unit,
     onScheduleClick: () -> Unit,
-    onNudgeOnlyWhenOverdueChange: (Boolean) -> Unit,
-    onCadenceClick: () -> Unit,
     onExportClick: () -> Unit,
     onImportClick: () -> Unit
 ) {
@@ -167,39 +192,11 @@ private fun SettingsContent(
 
         item {
             Card {
-                ToggleRow(
-                    label = "Weekly nudge",
+                NudgeRow(
+                    schedule = state.nudgeScheduleLabel,
                     checked = state.nudgeEnabled,
+                    onClick = onScheduleClick,
                     onCheckedChange = onNudgeEnabledChange
-                )
-
-                Divider()
-
-                ValueRow(
-                    label = "Nudge me on",
-                    value = state.nudgeScheduleLabel,
-                    enabled = state.nudgeEnabled,
-                    onClick = onScheduleClick
-                )
-
-                Divider()
-
-                ToggleRow(
-                    label = "Only when someone is overdue",
-                    checked = state.nudgeOnlyWhenOverdue,
-                    onCheckedChange = onNudgeOnlyWhenOverdueChange
-                )
-            }
-        }
-
-        item { Header("Defaults") }
-
-        item {
-            Card {
-                ValueRow(
-                    label = "Cadence for new people",
-                    value = state.defaultCadenceLabel,
-                    onClick = onCadenceClick
                 )
             }
         }
@@ -207,19 +204,28 @@ private fun SettingsContent(
         item { Header("Your data") }
 
         item {
+            // Copying people in from contacts used to live here. It belongs with adding a
+            // person, not with your data: it's a way in, not a setting. A backup is both ways
+            // out and back, so export and import sit together.
             Card {
                 ValueRow(label = "Export a backup", value = null, onClick = onExportClick)
 
                 Divider()
 
-                ValueRow(label = "Import from contacts", value = null, onClick = onImportClick)
+                ValueRow(
+                    label = "Import a backup",
+                    value = null,
+                    enabled = !state.isImporting,
+                    onClick = onImportClick
+                )
             }
         }
 
         item {
             Text(
                 text = "Everything lives on this phone. Tether has no account and no server, so " +
-                        "a backup is the only copy that survives a lost device.",
+                        "a backup is the only copy that survives a lost device. Importing one " +
+                        "adds what's missing and leaves what's already here alone.",
                 style = TetherType.Caption,
                 color = InkFaint,
                 modifier = Modifier.padding(top = 10.dp, start = Spacing.screen, end = Spacing.screen)
@@ -286,19 +292,43 @@ private fun Divider() {
     )
 }
 
+/**
+ * Whether and when, in one row: the text opens the schedule, the switch turns it on and off. The
+ * rule between them says they're two targets. Picking a time while it's off turns it on, so the
+ * text is never a dead tap.
+ */
 @Composable
-private fun ToggleRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+private fun NudgeRow(
+    schedule: String,
+    checked: Boolean,
+    onClick: () -> Unit,
+    onCheckedChange: (Boolean) -> Unit
+) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = Spacing.sm),
+        modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.lg)
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(1f)
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .clickable(onClick = onClick)
+                .padding(vertical = Spacing.md),
+            verticalArrangement = Arrangement.spacedBy(Spacing.xxs)
+        ) {
+            Text(text = "Weekly nudge", style = MaterialTheme.typography.bodyMedium)
+
+            Text(
+                text = schedule,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (checked) InkMuted else InkFaint
+            )
+        }
+
+        Box(
+            Modifier
+                .size(width = Sizes.border, height = Spacing.xl)
+                .background(Surface300)
         )
 
         Switch(
@@ -350,39 +380,3 @@ private fun ValueRow(
         )
     }
 }
-
-@Composable
-private fun CadenceDialog(
-    selected: CadencePreset,
-    onDismiss: () -> Unit,
-    onSelect: (CadencePreset) -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Surface100,
-        title = {
-            Text(text = "Cadence for new people", style = MaterialTheme.typography.titleMedium)
-        },
-        text = {
-            Column {
-                CadencePreset.entries.forEach { preset ->
-                    Text(
-                        text = preset.label,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (preset == selected) Accent else Ink,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onSelect(preset) }
-                            .padding(vertical = Spacing.md)
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(text = "Close", style = MaterialTheme.typography.labelLarge, color = InkMuted)
-            }
-        }
-    )
-}
-

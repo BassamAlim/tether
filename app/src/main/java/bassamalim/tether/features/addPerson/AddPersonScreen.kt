@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -30,9 +31,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import bassamalim.tether.core.enums.CadencePreset
-import bassamalim.tether.core.enums.RelationshipTag
 import bassamalim.tether.core.ui.components.FilterPill
 import bassamalim.tether.core.ui.components.LabeledTextField
+import bassamalim.tether.core.ui.components.RelationshipField
 import bassamalim.tether.core.ui.components.SectionLabel
 import bassamalim.tether.core.ui.theme.Accent
 import bassamalim.tether.core.ui.theme.InkFaint
@@ -42,6 +43,7 @@ import bassamalim.tether.core.ui.theme.Sizes
 import bassamalim.tether.core.ui.theme.Spacing
 import bassamalim.tether.core.ui.theme.Surface0
 import bassamalim.tether.core.ui.theme.Surface100
+import bassamalim.tether.core.ui.theme.Surface200
 import bassamalim.tether.core.ui.theme.Surface300
 import bassamalim.tether.core.ui.theme.TetherType
 import bassamalim.tether.R
@@ -53,7 +55,9 @@ fun AddPersonScreen(viewModel: AddPersonViewModel = hiltViewModel()) {
 
     AddPersonScreen(
         state = state,
+        onFromContactsClick = viewModel::onFromContactsClick,
         onNameChange = viewModel::onNameChange,
+        onTagChange = viewModel::onTagChange,
         onTagSelect = viewModel::onTagSelect,
         onCadenceSelect = viewModel::onCadenceSelect,
         onHowYouMetChange = viewModel::onHowYouMetChange,
@@ -65,8 +69,10 @@ fun AddPersonScreen(viewModel: AddPersonViewModel = hiltViewModel()) {
 @Composable
 private fun AddPersonScreen(
     state: AddPersonUiState,
+    onFromContactsClick: () -> Unit,
     onNameChange: (String) -> Unit,
-    onTagSelect: (RelationshipTag) -> Unit,
+    onTagChange: (String) -> Unit,
+    onTagSelect: (String) -> Unit,
     onCadenceSelect: (CadencePreset) -> Unit,
     onHowYouMetChange: (String) -> Unit,
     onCancel: () -> Unit,
@@ -81,6 +87,24 @@ private fun AddPersonScreen(
     ) {
         TopBar(canSave = state.canSave, onCancel = onCancel, onSave = onSave)
 
+        // Most people you want to keep up with are already in your phone, so the shortcut comes
+        // before the form: typing out a name and number the address book already has is the
+        // fallback, not the first offer.
+        FromContactsButton(
+            onClick = onFromContactsClick,
+            modifier = Modifier.padding(top = Spacing.sm, start = Spacing.screen, end = Spacing.screen)
+        )
+
+        Text(
+            text = "or write down someone your contacts don't have",
+            style = TetherType.Caption,
+            color = InkFaint,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .padding(top = 14.dp, start = Spacing.screen, end = Spacing.screen)
+                .fillMaxWidth()
+        )
+
         PhotoButton(modifier = Modifier.align(Alignment.CenterHorizontally))
 
         LabeledTextField(
@@ -91,19 +115,14 @@ private fun AddPersonScreen(
             modifier = Modifier.padding(top = 26.dp, start = Spacing.screen, end = Spacing.screen)
         )
 
-        Column(Modifier.padding(top = 22.dp, start = Spacing.screen, end = Spacing.screen)) {
-            SectionLabel(text = "Relationship")
-
-            ChipRow(modifier = Modifier.padding(top = 10.dp)) {
-                RelationshipTag.entries.forEach { tag ->
-                    FilterPill(
-                        label = tag.label,
-                        selected = tag == state.tag,
-                        onClick = { onTagSelect(tag) }
-                    )
-                }
-            }
-        }
+        RelationshipField(
+            label = "Relationship",
+            value = state.tag,
+            options = state.relationshipOptions,
+            onValueChange = onTagChange,
+            onOptionClick = onTagSelect,
+            modifier = Modifier.padding(top = 22.dp, start = Spacing.screen, end = Spacing.screen)
+        )
 
         Column(Modifier.padding(top = 22.dp, start = Spacing.screen, end = Spacing.screen)) {
             SectionLabel(text = "Reach out every")
@@ -169,6 +188,41 @@ private fun TopBar(canSave: Boolean, onCancel: () -> Unit, onSave: () -> Unit) {
             modifier = Modifier
                 .clickable(enabled = canSave, onClick = onSave)
                 .padding(horizontal = Spacing.md, vertical = Spacing.md)
+        )
+    }
+}
+
+@Composable
+private fun FromContactsButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(52.dp)
+            .clip(MaterialTheme.shapes.medium)
+            .background(color = Surface200)
+            .clickable(onClick = onClick)
+            .padding(horizontal = Spacing.lg),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_people),
+            contentDescription = null,
+            tint = InkMuted,
+            modifier = Modifier.size(20.dp)
+        )
+
+        Text(
+            text = "Pick from contacts",
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.weight(1f)
+        )
+
+        Icon(
+            painter = painterResource(R.drawable.ic_chevron_right),
+            contentDescription = null,
+            tint = InkFaint,
+            modifier = Modifier.size(18.dp)
         )
     }
 }

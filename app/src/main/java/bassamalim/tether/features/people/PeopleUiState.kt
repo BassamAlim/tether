@@ -1,14 +1,15 @@
 package bassamalim.tether.features.people
 
-import bassamalim.tether.core.enums.RelationshipTag
-
 data class PeopleUiState(
     val isLoading: Boolean = true,
-    val filter: PeopleFilter = PeopleFilter.ALL,
+    val filter: PeopleFilter = PeopleFilter.All,
+    val filters: List<FilterOption> = emptyList(),
     val totalCount: Int = 0,
     val slippingCount: Int = 0,
     val slipping: List<PersonListItem> = emptyList(),
-    val inTouch: List<PersonListItem> = emptyList()
+    val inTouch: List<PersonListItem> = emptyList(),
+    /** Heads [inTouch]; under the Untracked chip nobody listed is in touch, just untracked. */
+    val inTouchLabel: String = "In touch"
 ) {
     val isEmpty get() = !isLoading && slipping.isEmpty() && inTouch.isEmpty()
 }
@@ -18,15 +19,9 @@ data class PersonListItem(
     val id: Long,
     val name: String,
     val initials: String,
-    val tag: RelationshipTag?,
+    /** Their relationship, uppercased for the chip. */
+    val tag: String?,
     val cadenceLabel: String,
     val lastContactLabel: String,
     val isSlipping: Boolean
 )
-
-enum class PeopleFilter(val label: String) {
-    ALL("All"),
-    SLIPPING("Slipping"),
-    CLOSE("Close"),
-    WORK("Work")
-}

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -59,7 +60,9 @@ private fun PeopleScreen(
         contentPadding = PaddingValues(bottom = Spacing.xxl)
     ) {
         item {
-            Column(Modifier.padding(horizontal = Spacing.screen)) {
+            Column(
+                Modifier.padding(top = Spacing.xxl, start = Spacing.screen, end = Spacing.screen)
+            ) {
                 Text(text = "People", style = MaterialTheme.typography.headlineMedium)
 
                 Text(
@@ -78,17 +81,19 @@ private fun PeopleScreen(
         }
 
         item {
-            Row(
+            // Scrolls sideways: the chips are the user's own relationships, however many.
+            LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = Spacing.screen, vertical = Spacing.md),
+                    .padding(vertical = Spacing.md),
+                contentPadding = PaddingValues(horizontal = Spacing.screen),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
-                PeopleFilter.entries.forEach { filter ->
+                items(state.filters, key = { it.filter.toString() }) { option ->
                     FilterPill(
-                        label = filter.label,
-                        selected = filter == state.filter,
-                        onClick = { onFilterSelect(filter) }
+                        label = option.label,
+                        selected = option.filter == state.filter,
+                        onClick = { onFilterSelect(option.filter) }
                     )
                 }
             }
@@ -115,7 +120,7 @@ private fun PeopleScreen(
         if (state.inTouch.isNotEmpty()) {
             item {
                 SectionLabel(
-                    text = "In touch",
+                    text = state.inTouchLabel,
                     modifier = Modifier.padding(
                         start = Spacing.screen,
                         end = Spacing.screen,
@@ -166,7 +171,9 @@ private fun PersonRow(person: PersonListItem, onClick: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
-                person.tag?.let { TagChip(label = it.chipLabel) }
+                person.tag?.let {
+                    TagChip(label = it, modifier = Modifier.weight(1f, fill = false))
+                }
 
                 InfoChip(label = person.cadenceLabel)
             }

@@ -2,21 +2,28 @@ package bassamalim.tether.features.person
 
 import bassamalim.tether.core.data.dataSources.room.entities.Interaction
 import bassamalim.tether.core.enums.CadencePreset
-import bassamalim.tether.core.enums.RelationshipTag
 
 data class PersonUiState(
     val isLoading: Boolean = true,
     val id: Long = 0,
     val name: String = "",
     val initials: String = "",
-    val tag: RelationshipTag? = null,
+    /** Their relationship as stored, which is what the editor starts from. */
+    val tag: String = "",
+    /** The chip's uppercase form, or null when they have none. */
     val tagLabel: String? = null,
+    /** The shared vocabulary, for both the relationship and a connection's label. */
+    val relationshipOptions: List<String> = emptyList(),
+    /** The draft while the relationship is being rewritten. */
+    val tagDraft: String = "",
     val cadence: CadencePreset = CadencePreset.MONTH,
     val cadenceLabel: String = "",
     /** "Last talked 7 weeks ago, 5 weeks overdue". */
     val status: String = "",
     val isOverdue: Boolean = false,
     val phone: String? = null,
+    /** "Coffee · Tomorrow, 19:00", or null when the bell isn't set. */
+    val reminderLabel: String? = null,
     val details: List<DetailRow> = emptyList(),
     val connections: List<ConnectionEntry> = emptyList(),
     /** Non-null while the label of one connection is being rewritten. */

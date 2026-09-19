@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
@@ -50,10 +52,9 @@ import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import bassamalim.tether.core.enums.CadencePreset
-import bassamalim.tether.core.enums.RelationshipTag
 import bassamalim.tether.core.ui.components.Avatar
+import bassamalim.tether.core.ui.components.RelationshipField
 import bassamalim.tether.core.ui.components.FilterPill
-import bassamalim.tether.core.ui.components.LabeledTextField
 import bassamalim.tether.core.ui.components.SectionLabel
 import bassamalim.tether.core.ui.components.UndoSnackbar
 import bassamalim.tether.core.utils.internationalDigits
@@ -112,11 +113,14 @@ fun PersonScreen(viewModel: PersonViewModel = hiltViewModel()) {
         onBack = viewModel::onBack,
         onTagClick = viewModel::onTagClick,
         onTagDismiss = viewModel::onTagDismiss,
-        onTagSelect = viewModel::onTagSelect,
+        onTagChange = viewModel::onTagChange,
+        onTagOptionClick = viewModel::onTagOptionClick,
+        onTagSave = viewModel::onTagSave,
         onCadenceClick = viewModel::onCadenceClick,
         onCadenceDismiss = viewModel::onCadenceDismiss,
         onCadenceSelect = viewModel::onCadenceSelect,
         onLogCatchUp = viewModel::onLogCatchUp,
+        onReminderClick = viewModel::onReminderClick,
         onMessage = { state.phone?.let { context.openWhatsApp(it) } },
         onHistoryClick = viewModel::onHistoryClick,
         onHistoryMenuOpen = viewModel::onHistoryMenuOpen,
@@ -126,6 +130,7 @@ fun PersonScreen(viewModel: PersonViewModel = hiltViewModel()) {
         onConnectionClick = viewModel::onConnectionClick,
         onConnectionEdit = viewModel::onConnectionEdit,
         onConnectionLabelChange = viewModel::onConnectionLabelChange,
+        onConnectionSuggestionClick = viewModel::onConnectionSuggestionClick,
         onConnectionEditDismiss = viewModel::onConnectionEditDismiss,
         onConnectionLabelSave = viewModel::onConnectionLabelSave,
         onDisconnect = viewModel::onDisconnect,
@@ -168,11 +173,14 @@ private fun PersonScreen(
     onBack: () -> Unit,
     onTagClick: () -> Unit,
     onTagDismiss: () -> Unit,
-    onTagSelect: (RelationshipTag?) -> Unit,
+    onTagChange: (String) -> Unit,
+    onTagOptionClick: (String) -> Unit,
+    onTagSave: () -> Unit,
     onCadenceClick: () -> Unit,
     onCadenceDismiss: () -> Unit,
     onCadenceSelect: (CadencePreset) -> Unit,
     onLogCatchUp: () -> Unit,
+    onReminderClick: () -> Unit,
     onMessage: () -> Unit,
     onHistoryClick: (Long) -> Unit,
     onHistoryMenuOpen: (Long) -> Unit,
@@ -182,6 +190,7 @@ private fun PersonScreen(
     onConnectionClick: (Long) -> Unit,
     onConnectionEdit: (ConnectionEntry) -> Unit,
     onConnectionLabelChange: (String) -> Unit,
+    onConnectionSuggestionClick: (String) -> Unit,
     onConnectionEditDismiss: () -> Unit,
     onConnectionLabelSave: () -> Unit,
     onDisconnect: () -> Unit,
@@ -213,9 +222,17 @@ private fun PersonScreen(
             item {
                 Actions(
                     canMessage = state.canMessage,
+                    hasReminder = state.reminderLabel != null,
                     onLogCatchUp = onLogCatchUp,
+                    onReminderClick = onReminderClick,
                     onMessage = onMessage
                 )
+            }
+
+            state.reminderLabel?.let { label ->
+                item { Header("Reminder") }
+
+                item { ReminderRow(label = label, onClick = onReminderClick) }
             }
 
             if (state.details.isNotEmpty()) {
@@ -272,9 +289,12 @@ private fun PersonScreen(
 
     if (state.isPickingTag) {
         RelationshipDialog(
-            selected = state.tag,
+            value = state.tagDraft,
+            options = state.relationshipOptions,
+            onValueChange = onTagChange,
+            onOptionClick = onTagOptionClick,
             onDismiss = onTagDismiss,
-            onSelect = onTagSelect
+            onSave = onTagSave
         )
     }
 
@@ -289,7 +309,9 @@ private fun PersonScreen(
     state.editingConnection?.let { editing ->
         ConnectionDialog(
             editing = editing,
+            options = state.relationshipOptions,
             onLabelChange = onConnectionLabelChange,
+            onSuggestionClick = onConnectionSuggestionClick,
             onDismiss = onConnectionEditDismiss,
             onSave = onConnectionLabelSave,
             onRemove = onDisconnect
@@ -437,7 +459,13 @@ private fun HeaderChip(
 }
 
 @Composable
-private fun Actions(canMessage: Boolean, onLogCatchUp: () -> Unit, onMessage: () -> Unit) {
+private fun Actions(
+    canMessage: Boolean,
+    hasReminder: Boolean,
+    onLogCatchUp: () -> Unit,
+    onReminderClick: () -> Unit,
+    onMessage: () -> Unit
+) {
     Row(
         modifier = Modifier
             .padding(top = Spacing.screen, start = Spacing.screen, end = Spacing.screen)
@@ -468,12 +496,14 @@ private fun Actions(canMessage: Boolean, onLogCatchUp: () -> Unit, onMessage: ()
             )
         }
 
-        // TODO: per-person reminders aren't built yet; the weekly nudge is all there is.
-        SquareIconButton(enabled = false, onClick = {}) {
+        SquareIconButton(enabled = true, onClick = onReminderClick) {
             Icon(
                 painter = painterResource(R.drawable.ic_bell),
-                contentDescription = "Set a reminder",
-                tint = InkFaint,
+                // Always full Ink, like the message button when it's live: the muted inks are
+                // this screen's disabled tint, so anything dimmer reads as a dead button. What's
+                // set is said by the Reminder row below, not by dimming the way in.
+                contentDescription = if (hasReminder) "Edit the reminder" else "Set a reminder",
+                tint = Ink,
                 modifier = Modifier.size(19.dp)
             )
         }
@@ -613,7 +643,9 @@ private fun AddConnectionRow(onClick: () -> Unit) {
 @Composable
 private fun ConnectionDialog(
     editing: ConnectionEdit,
+    options: List<String>,
     onLabelChange: (String) -> Unit,
+    onSuggestionClick: (String) -> Unit,
     onDismiss: () -> Unit,
     onSave: () -> Unit,
     onRemove: () -> Unit
@@ -623,12 +655,13 @@ private fun ConnectionDialog(
         containerColor = Surface100,
         title = { Text(text = editing.name, style = MaterialTheme.typography.titleMedium) },
         text = {
-            Column {
-                LabeledTextField(
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                RelationshipField(
                     label = "How they know each other",
                     value = editing.label,
+                    options = options,
                     onValueChange = onLabelChange,
-                    placeholder = "Siblings, worked together, met at…"
+                    onOptionClick = onSuggestionClick
                 )
 
                 Text(
@@ -801,38 +834,44 @@ private fun HistoryMenu(
 
 @Composable
 private fun RelationshipDialog(
-    selected: RelationshipTag?,
+    value: String,
+    options: List<String>,
+    onValueChange: (String) -> Unit,
+    onOptionClick: (String) -> Unit,
     onDismiss: () -> Unit,
-    onSelect: (RelationshipTag?) -> Unit
+    onSave: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = Surface100,
         title = { Text(text = "Relationship", style = MaterialTheme.typography.titleMedium) },
         text = {
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                verticalArrangement = Arrangement.spacedBy(Spacing.sm)
-            ) {
-                RelationshipTag.entries.forEach { tag ->
-                    FilterPill(
-                        label = tag.label,
-                        selected = tag == selected,
-                        onClick = { onSelect(tag) }
-                    )
-                }
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                RelationshipField(
+                    label = "How you know them",
+                    value = value,
+                    options = options,
+                    onValueChange = onValueChange,
+                    onOptionClick = onOptionClick
+                )
 
-                // Tapping the current one clears it, but "None" makes that discoverable.
-                FilterPill(
-                    label = "None",
-                    selected = selected == null,
-                    onClick = { onSelect(null) }
+                Text(
+                    // Clearing the field is how you say "none"; saying so beats a None pill.
+                    text = "Leave it empty and they carry no relationship at all.",
+                    style = TetherType.Caption,
+                    color = InkFaint,
+                    modifier = Modifier.padding(top = Spacing.md)
                 )
             }
         },
         confirmButton = {
+            TextButton(onClick = onSave) {
+                Text(text = "Save", style = MaterialTheme.typography.labelLarge, color = Accent)
+            }
+        },
+        dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(text = "Close", style = MaterialTheme.typography.labelLarge, color = InkMuted)
+                Text(text = "Cancel", style = MaterialTheme.typography.labelLarge, color = InkMuted)
             }
         }
     )
@@ -931,6 +970,43 @@ private fun CircleIconButton(onClick: () -> Unit, content: @Composable () -> Uni
         contentAlignment = Alignment.Center,
         content = { content() }
     )
+}
+
+/** What the bell is set to, under its own header, the way Details and Connections read. */
+@Composable
+private fun ReminderRow(label: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .padding(horizontal = Spacing.screen)
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .background(color = Surface100)
+            .clickable(onClick = onClick)
+            .padding(horizontal = Spacing.lg, vertical = Spacing.lg),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_bell),
+            contentDescription = null,
+            tint = InkMuted,
+            modifier = Modifier.size(18.dp)
+        )
+
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = Ink,
+            modifier = Modifier.weight(1f)
+        )
+
+        Icon(
+            painter = painterResource(R.drawable.ic_chevron_right),
+            contentDescription = null,
+            tint = InkFaint,
+            modifier = Modifier.size(18.dp)
+        )
+    }
 }
 
 @Composable

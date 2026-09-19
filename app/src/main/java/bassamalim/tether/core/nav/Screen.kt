@@ -23,7 +23,9 @@ sealed interface Screen {
     @Serializable data class Lock(
         val resumable: Boolean = false,
         /** Carried through the lock, so a nudge still lands on Catch up after you unlock. */
-        val thenCatchUp: Boolean = false
+        val thenCatchUp: Boolean = false,
+        /** Likewise for a reminder, which is about one person rather than the list. 0 is none. */
+        val thenPersonId: Long = 0
     ) : Screen
 
     @Serializable data class Person(val id: Long) : Screen
@@ -40,10 +42,23 @@ sealed interface Screen {
         val interactionId: Long = 0
     ) : Screen
 
+    /** The bell on Person detail: one reminder about one person, set or cleared. */
+    @Serializable data class Reminder(val personId: Long) : Screen
+
     /** The picker that links this person to someone else in Tether. */
     @Serializable data class Connect(val personId: Long) : Screen
 
     @Serializable data object Search : Screen
 
+    /**
+     * The contacts picker, reached from New person: the other way in, for people the address
+     * book already knows.
+     */
     @Serializable data object ImportContacts : Screen
+
+    /**
+     * The walk through people just copied in from contacts, one at a time, asking for the parts
+     * an address book has no idea about. [personIds] are the rows the import created.
+     */
+    @Serializable data class SetUpImported(val personIds: List<Long>) : Screen
 }

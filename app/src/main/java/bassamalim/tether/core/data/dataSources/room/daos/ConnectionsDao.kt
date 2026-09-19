@@ -38,11 +38,13 @@ interface ConnectionsDao {
     fun observeConnectedIds(personId: Long): Flow<List<Long>>
 
     /**
+     * One transaction, so a batch of links either all land or none do.
+     *
      * IGNORE rather than REPLACE: the unique pair index already means a second attempt is the
      * same edge, and replacing would hand it a new id for no gain.
      */
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(connection: Connection): Long
+    suspend fun insertAll(connections: List<Connection>)
 
     @Query("UPDATE connections SET label = :label WHERE id = :id")
     suspend fun updateLabel(id: Long, label: String)

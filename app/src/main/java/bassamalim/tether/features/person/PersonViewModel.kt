@@ -6,10 +6,10 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import bassamalim.tether.core.data.dataSources.room.entities.Interaction
 import bassamalim.tether.core.data.dataSources.room.entities.PersonDetail
+import bassamalim.tether.core.data.dataSources.room.entities.Reminder
 import bassamalim.tether.core.data.dataSources.room.relations.ConnectedPerson
 import bassamalim.tether.core.domain.DueState
 import bassamalim.tether.core.enums.CadencePreset
-import bassamalim.tether.core.enums.RelationshipTag
 import bassamalim.tether.core.models.TrackedPerson
 import bassamalim.tether.core.nav.Navigator
 import bassamalim.tether.core.nav.Screen
@@ -17,6 +17,8 @@ import bassamalim.tether.core.utils.agoLabel
 import bassamalim.tether.core.utils.cadenceLabel
 import bassamalim.tether.core.utils.initials
 import bassamalim.tether.core.utils.lastTalkedStatus
+import bassamalim.tether.core.utils.reminderDateLabel
+import bassamalim.tether.core.utils.timeLabel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,6 +43,17 @@ class PersonViewModel @Inject constructor(
     /** Menu and dialog state is the screen's, not the database's. */
     private val localState = MutableStateFlow(LocalState())
 
+    /**
+     * The vocabulary and the screen's own state, paired: combine types only five flows, and the
+     * person's four are the ones that have to stay named.
+     */
+    private val screenState = combine(
+        domain.observeRelationshipOptions(),
+        domain.observeReminder(personId),
+        localState,
+        ::ScreenState
+    )
+
     private val _events = Channel<PersonEvent>()
     val events = _events.receiveAsFlow()
 
@@ -59,9 +72,17 @@ class PersonViewModel @Inject constructor(
         domain.observeDetails(personId),
         domain.observeHistory(personId),
         domain.observeConnections(personId),
-        localState
-    ) { person, details, history, connections, local ->
-        person?.toUiState(details, history, connections, local) ?: PersonUiState(isLoading = false)
+        screenState
+    ) { person, details, history, connections, screen ->
+        person?.toUiState(
+            details = details,
+            history = history,
+            connections = connections,
+            reminder = screen.reminder,
+            options = screen.options,
+            local = screen.local
+        )
+            ?: PersonUiState(isLoading = false)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -71,6 +92,9 @@ class PersonViewModel @Inject constructor(
     fun onBack() = navigator.popBackStack()
 
     fun onLogCatchUp() = navigator.navigate(Screen.LogInteraction(personId))
+
+    /** The bell: set a reminder about them, or open the one already set. */
+    fun onReminderClick() = navigator.navigate(Screen.Reminder(personId))
 
     /** History is a record you can correct: tapping an entry reopens the sheet on it. */
     fun onHistoryClick(interactionId: Long) {
@@ -103,13 +127,24 @@ class PersonViewModel @Inject constructor(
         viewModelScope.launch { domain.restoreInteraction(interaction) }
     }
 
-    fun onTagClick() = localState.update { it.copy(isPickingTag = true) }
+    fun onTagClick() = localState.update {
+        it.copy(isPickingTag = true, tagDraft = uiState.value.tag)
+    }
 
-    fun onTagDismiss() = localState.update { it.copy(isPickingTag = false) }
+    fun onTagDismiss() = localState.update { it.copy(isPickingTag = false, tagDraft = "") }
+
+    fun onTagChange(value: String) = localState.update { it.copy(tagDraft = value) }
+
+    /** Tapping the one already chosen clears it, the way every other chip in the app does. */
+    fun onTagOptionClick(option: String) = localState.update {
+        it.copy(tagDraft = if (it.tagDraft.equals(option, ignoreCase = true)) "" else option)
+    }
 
     /** Relationships change; the row that shows them should too. */
-    fun onTagSelect(tag: RelationshipTag?) {
-        localState.update { it.copy(isPickingTag = false) }
+    fun onTagSave() {
+        val tag = localState.value.tagDraft
+
+        onTagDismiss()
 
         viewModelScope.launch { domain.setTag(personId, tag) }
     }
@@ -139,6 +174,11 @@ class PersonViewModel @Inject constructor(
 
     fun onConnectionLabelChange(value: String) =
         localState.update { it.copy(connectionLabel = value) }
+
+    /** Tapping the suggestion you already chose clears it, the way the tag chips do. */
+    fun onConnectionSuggestionClick(suggestion: String) = localState.update {
+        it.copy(connectionLabel = if (it.connectionLabel == suggestion) "" else suggestion)
+    }
 
     fun onConnectionEditDismiss() =
         localState.update { it.copy(editingConnectionId = null, connectionLabel = "") }
@@ -176,8 +216,15 @@ class PersonViewModel @Inject constructor(
         }
     }
 
+    private data class ScreenState(
+        val options: List<String>,
+        val reminder: Reminder?,
+        val local: LocalState
+    )
+
     private data class LocalState(
         val openHistoryMenuId: Long? = null,
+        val tagDraft: String = "",
         val editingConnectionId: Long? = null,
         val connectionLabel: String = "",
         val isPickingTag: Boolean = false,
@@ -190,6 +237,8 @@ class PersonViewModel @Inject constructor(
         details: List<PersonDetail>,
         history: List<Interaction>,
         connections: List<ConnectedPerson>,
+        reminder: Reminder?,
+        options: List<String>,
         local: LocalState
     ): PersonUiState {
         val today = domain.today()
@@ -209,8 +258,10 @@ class PersonViewModel @Inject constructor(
             id = person.id,
             name = person.name,
             initials = initials(person.name),
-            tag = person.tag,
-            tagLabel = person.tag?.chipLabel,
+            tag = person.tag.orEmpty(),
+            tagLabel = person.tag?.uppercase(),
+            relationshipOptions = options,
+            tagDraft = local.tagDraft,
             cadence = CadencePreset.of(person.cadenceDays),
             cadenceLabel = cadenceLabel(person.cadenceDays),
             status = lastTalkedStatus(
@@ -220,6 +271,14 @@ class PersonViewModel @Inject constructor(
             ),
             isOverdue = dueState is DueState.Slipping,
             phone = person.phone,
+            reminderLabel = reminder?.let {
+                // What and when, in one line: "Coffee · Tomorrow, 19:00".
+                listOfNotNull(
+                    it.type?.label,
+                    "${reminderDateLabel(it.scheduledFor.toLocalDate(), today)}, " +
+                            timeLabel(it.scheduledFor.toLocalTime())
+                ).joinToString(" · ")
+            },
             details = details.map { DetailRow(id = it.id, label = it.label, value = it.value) },
             connections = connectionEntries,
             editingConnection = connectionEntries

@@ -18,7 +18,9 @@ import bassamalim.tether.features.lock.LockScreen
 import bassamalim.tether.features.logInteraction.LogInteractionScreen
 import bassamalim.tether.features.main.MainScreen
 import bassamalim.tether.features.person.PersonScreen
+import bassamalim.tether.features.reminder.ReminderScreen
 import bassamalim.tether.features.search.SearchScreen
+import bassamalim.tether.features.setUpImported.SetUpImportedScreen
 
 @Composable
 fun Navigation(navigator: Navigator, startDestination: Screen = Screen.Main()) {
@@ -60,10 +62,14 @@ fun NavGraph(navController: NavHostController, startDestination: Screen) {
 
         composable<Screen.LogInteraction> { LogInteractionScreen() }
 
+        composable<Screen.Reminder> { ReminderScreen() }
+
         composable<Screen.Connect> { ConnectScreen() }
 
         composable<Screen.Search> { SearchScreen() }
 
         composable<Screen.ImportContacts> { ImportContactsScreen() }
+
+        composable<Screen.SetUpImported> { SetUpImportedScreen() }
     }
 }

@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import bassamalim.tether.core.ui.theme.Accent
 import bassamalim.tether.core.ui.theme.AccentWash
@@ -20,13 +21,18 @@ import bassamalim.tether.core.ui.theme.Pill
 import bassamalim.tether.core.ui.theme.Sizes
 import bassamalim.tether.core.ui.theme.Surface200
 
-/** The relationship label on a person's row, e.g. "CLOSE". */
+/**
+ * The relationship on a person's row, e.g. "CLOSE FRIEND". The vocabulary is open-ended, so a
+ * long one ellipsizes rather than shouldering whatever sits beside it off the row.
+ */
 @Composable
 fun TagChip(label: String, modifier: Modifier = Modifier) {
     Text(
         text = label,
         style = MaterialTheme.typography.labelSmall,
         color = InkMuted,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
         modifier = modifier
             .background(color = Surface200, shape = Pill)
             .padding(horizontal = 8.dp, vertical = 3.dp)

@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import bassamalim.tether.core.models.DeviceContact
 import bassamalim.tether.core.nav.Navigator
-import bassamalim.tether.core.utils.cadenceValueLabel
+import bassamalim.tether.core.nav.Screen
 import bassamalim.tether.core.utils.initials
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,19 +26,6 @@ class ImportContactsViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(ImportContactsUiState())
     val uiState: StateFlow<ImportContactsUiState> = _uiState.asStateFlow()
-
-    init {
-        viewModelScope.launch {
-            val days = domain.defaultCadenceDays()
-
-            _uiState.update {
-                it.copy(
-                    cadenceLabel = cadenceValueLabel(days).lowercase(),
-                    hasDefaultCadence = days != null
-                )
-            }
-        }
-    }
 
     fun onPermissionResult(granted: Boolean) {
         _uiState.update { it.copy(hasPermission = granted, isPermissionDenied = !granted) }
@@ -64,8 +51,14 @@ class ImportContactsViewModel @Inject constructor(
         _uiState.update { it.copy(isImporting = true) }
 
         viewModelScope.launch {
-            domain.import(contacts.filter { it.id in selectedIds })
-            navigator.popBackStack()
+            val ids = domain.import(contacts.filter { it.id in selectedIds })
+
+            // The picker leaves the stack as the walk opens: the copying has happened, and
+            // coming back to a still-ticked list would only invite importing the same people
+            // twice. Backing out of the walk drops you where you started the import.
+            navigator.navigate(Screen.SetUpImported(ids)) {
+                popUpTo(Screen.ImportContacts) { inclusive = true }
+            }
         }
     }
 

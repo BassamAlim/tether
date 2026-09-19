@@ -2,14 +2,14 @@ package bassamalim.tether.core.data.dataSources.room.entities
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import bassamalim.tether.core.enums.RelationshipTag
 import java.time.LocalDate
 
 @Entity(tableName = "people")
 data class Person(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
-    val tag: RelationshipTag? = null,
+    /** How you know them, from the shared relationship vocabulary. Null means unsaid. */
+    val tag: String? = null,
     /**
      * Days between check-ins. Null means "Never": the person stays out of Catch up and out of
      * the slipping section, but still appears in People and in search.

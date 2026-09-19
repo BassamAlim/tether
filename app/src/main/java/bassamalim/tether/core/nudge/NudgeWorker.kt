@@ -46,9 +46,8 @@ class NudgeWorker @AssistedInject constructor(
             }
             .sortedByDescending { it.daysOverdue }
 
-        val onlyWhenOverdue = preferencesRepository.observeNudgeOnlyWhenOverdue().first()
-
-        if (slipping.isNotEmpty() || !onlyWhenOverdue) notify(nudgeCopy(slipping))
+        // Sent even when nobody's slipping: "nobody's due" is still worth reading.
+        notify(nudgeCopy(slipping))
 
         // Book the next one before finishing, so a missed week can't end the series.
         scheduler.sync()

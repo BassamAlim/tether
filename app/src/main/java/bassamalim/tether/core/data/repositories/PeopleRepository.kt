@@ -4,7 +4,6 @@ import bassamalim.tether.core.data.dataSources.room.daos.PeopleDao
 import bassamalim.tether.core.data.dataSources.room.entities.Person
 import bassamalim.tether.core.data.dataSources.room.entities.PersonDetail
 import bassamalim.tether.core.data.dataSources.room.relations.PersonWithLastInteraction
-import bassamalim.tether.core.enums.RelationshipTag
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -31,9 +30,12 @@ class PeopleRepository @Inject constructor(
 
     suspend fun getAll(): List<Person> = peopleDao.getAll()
 
+    /** A named handful of people, by name order rather than by the order of [ids]. */
+    suspend fun get(ids: List<Long>): List<Person> = peopleDao.get(ids)
+
     suspend fun getAllDetails(): List<PersonDetail> = peopleDao.getAllDetails()
 
-    suspend fun setTag(id: Long, tag: RelationshipTag?) = peopleDao.updateTag(id, tag)
+    suspend fun setTag(id: Long, tag: String?) = peopleDao.updateTag(id, tag?.trim()?.ifEmpty { null })
 
     suspend fun setCadence(id: Long, cadenceDays: Int?) = peopleDao.updateCadence(id, cadenceDays)
 
@@ -42,8 +44,10 @@ class PeopleRepository @Inject constructor(
     suspend fun create(person: Person, details: List<PersonDetail> = emptyList()): Long =
         peopleDao.insertWithDetails(person, details)
 
-    /** Contacts import copies people in once; it never syncs back. */
-    suspend fun saveAll(people: List<Person>) = peopleDao.upsertAll(people)
+    /** Contacts import copies people in once; it never syncs back. Returns the new rows' ids. */
+    suspend fun saveAll(people: List<Person>): List<Long> = peopleDao.upsertAll(people)
+
+    suspend fun addDetails(details: List<PersonDetail>) = peopleDao.insertDetails(details)
 
     suspend fun delete(person: Person) = peopleDao.delete(person)
 

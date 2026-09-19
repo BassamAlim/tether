@@ -70,14 +70,6 @@ class LabelsTest {
     }
 
     @Test
-    fun `cadence reads as a settings value, not as a phrase`() {
-        assertEquals("Weekly", cadenceValueLabel(7))
-        assertEquals("Monthly", cadenceValueLabel(30))
-        assertEquals("Every 2 weeks", cadenceValueLabel(14))
-        assertEquals("Never", cadenceValueLabel(null))
-    }
-
-    @Test
     fun `initials take the first two words`() {
         assertEquals("MR", initials("Maya Reyes"))
         assertEquals("O", initials("Omar"))

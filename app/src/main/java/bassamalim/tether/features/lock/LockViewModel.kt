@@ -39,6 +39,10 @@ class LockViewModel @Inject constructor(
             navigator.navigate(destination) {
                 popUpTo(Screen.Lock(resumable = false)) { inclusive = true }
             }
+
+            // A reminder is about one person, so it lands on them — pushed after the tabs, so
+            // back still goes to People rather than out of the app.
+            if (route.thenPersonId != 0L) navigator.navigate(Screen.Person(route.thenPersonId))
         }
     }
 }

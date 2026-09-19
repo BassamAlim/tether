@@ -9,7 +9,6 @@ import androidx.room.Upsert
 import bassamalim.tether.core.data.dataSources.room.entities.Person
 import bassamalim.tether.core.data.dataSources.room.entities.PersonDetail
 import bassamalim.tether.core.data.dataSources.room.relations.PersonWithLastInteraction
-import bassamalim.tether.core.enums.RelationshipTag
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -71,11 +70,12 @@ interface PeopleDao {
     @Upsert
     suspend fun upsert(person: Person): Long
 
+    /** The new row ids, in the order the people were given, so an import can walk what it made. */
     @Upsert
-    suspend fun upsertAll(people: List<Person>)
+    suspend fun upsertAll(people: List<Person>): List<Long>
 
     @Query("UPDATE people SET tag = :tag WHERE id = :id")
-    suspend fun updateTag(id: Long, tag: RelationshipTag?)
+    suspend fun updateTag(id: Long, tag: String?)
 
     @Query("UPDATE people SET cadenceDays = :cadenceDays WHERE id = :id")
     suspend fun updateCadence(id: Long, cadenceDays: Int?)
@@ -99,6 +99,9 @@ interface PeopleDao {
 
     @Query("SELECT * FROM people ORDER BY name COLLATE NOCASE")
     suspend fun getAll(): List<Person>
+
+    @Query("SELECT * FROM people WHERE id IN (:ids) ORDER BY name COLLATE NOCASE")
+    suspend fun get(ids: List<Long>): List<Person>
 
     @Query("SELECT * FROM person_details ORDER BY personId, position")
     suspend fun getAllDetails(): List<PersonDetail>

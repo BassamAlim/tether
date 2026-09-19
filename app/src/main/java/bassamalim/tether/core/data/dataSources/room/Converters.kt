@@ -3,8 +3,9 @@ package bassamalim.tether.core.data.dataSources.room
 import androidx.room.TypeConverter
 import bassamalim.tether.core.enums.Initiator
 import bassamalim.tether.core.enums.InteractionType
-import bassamalim.tether.core.enums.RelationshipTag
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 class Converters {
 
@@ -13,6 +14,17 @@ class Converters {
 
     @TypeConverter
     fun fromEpochDay(epochDay: Long?): LocalDate? = epochDay?.let(LocalDate::ofEpochDay)
+
+    /**
+     * A wall clock, stored as seconds against a fixed reference rather than as an instant: a
+     * reminder set for seven in the evening should still say seven after a flight.
+     */
+    @TypeConverter
+    fun toEpochSecond(dateTime: LocalDateTime?): Long? = dateTime?.toEpochSecond(ZoneOffset.UTC)
+
+    @TypeConverter
+    fun fromEpochSecond(seconds: Long?): LocalDateTime? =
+        seconds?.let { LocalDateTime.ofEpochSecond(it, 0, ZoneOffset.UTC) }
 
     /**
      * Enums are read by name, and a name that no longer exists decays to null rather than
@@ -32,11 +44,4 @@ class Converters {
 
     @TypeConverter
     fun fromInitiator(initiator: Initiator?): String? = initiator?.name
-
-    @TypeConverter
-    fun toRelationshipTag(name: String?): RelationshipTag? =
-        name?.let { stored -> RelationshipTag.entries.firstOrNull { it.name == stored } }
-
-    @TypeConverter
-    fun fromRelationshipTag(tag: RelationshipTag?): String? = tag?.name
 }

@@ -10,23 +10,20 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimeInput
-import androidx.compose.material3.TimePickerDefaults
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import bassamalim.tether.core.ui.components.ClockDial
 import bassamalim.tether.core.ui.components.FilterPill
+import bassamalim.tether.core.ui.components.rememberClockState
+import bassamalim.tether.core.ui.components.time
 import bassamalim.tether.core.ui.theme.Accent
-import bassamalim.tether.core.ui.theme.AccentWash
-import bassamalim.tether.core.ui.theme.Ink
 import bassamalim.tether.core.ui.theme.InkMuted
 import bassamalim.tether.core.ui.theme.Spacing
 import bassamalim.tether.core.ui.theme.Surface100
-import bassamalim.tether.core.ui.theme.Surface200
 import java.time.DayOfWeek
 import java.time.LocalTime
 import java.time.format.TextStyle
@@ -42,11 +39,7 @@ fun ScheduleDialog(
     onConfirm: (DayOfWeek, LocalTime) -> Unit
 ) {
     var selectedDay by remember { mutableStateOf(day) }
-    val timeState = rememberTimePickerState(
-        initialHour = time.hour,
-        initialMinute = time.minute,
-        is24Hour = true
-    )
+    val timeState = rememberClockState(time)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -68,26 +61,13 @@ fun ScheduleDialog(
                     }
                 }
 
-                TimeInput(
-                    state = timeState,
-                    modifier = Modifier.padding(top = Spacing.screen),
-                    colors = TimePickerDefaults.colors(
-                        timeSelectorSelectedContainerColor = AccentWash,
-                        timeSelectorSelectedContentColor = Accent,
-                        timeSelectorUnselectedContainerColor = Surface200,
-                        timeSelectorUnselectedContentColor = Ink,
-                        periodSelectorSelectedContainerColor = AccentWash,
-                        periodSelectorSelectedContentColor = Accent,
-                        periodSelectorUnselectedContentColor = InkMuted,
-                        containerColor = Surface100
-                    )
-                )
+                ClockDial(state = timeState, modifier = Modifier.padding(top = Spacing.screen))
             }
         },
         confirmButton = {
             TextButton(
                 onClick = {
-                    onConfirm(selectedDay, LocalTime.of(timeState.hour, timeState.minute))
+                    onConfirm(selectedDay, timeState.time)
                 }
             ) {
                 Text(text = "Save", style = MaterialTheme.typography.labelLarge, color = Accent)

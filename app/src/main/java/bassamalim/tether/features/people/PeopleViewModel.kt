@@ -2,7 +2,6 @@ package bassamalim.tether.features.people
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import bassamalim.tether.core.enums.RelationshipTag
 import bassamalim.tether.core.models.TrackedPerson
 import bassamalim.tether.core.nav.Navigator
 import bassamalim.tether.core.nav.Screen
@@ -24,21 +23,27 @@ class PeopleViewModel @Inject constructor(
     private val navigator: Navigator
 ) : ViewModel() {
 
-    private val filter = MutableStateFlow(PeopleFilter.ALL)
+    private val filter = MutableStateFlow<PeopleFilter>(PeopleFilter.All)
 
     val uiState: StateFlow<PeopleUiState> = combine(
         domain.observePeople(),
         filter
-    ) { people, filter ->
+    ) { people, selected ->
+        val filters = filterOptions(people)
+        // A chip vanishes once nobody carries it (the last one retagged or opted in); fall back
+        // to All rather than leave an empty list under a chip that isn't there.
+        val filter = selected.takeIf { s -> filters.any { it.filter == s } } ?: PeopleFilter.All
         val visible = people.filter { it.matches(filter) }
 
         PeopleUiState(
             isLoading = false,
             filter = filter,
+            filters = filters,
             totalCount = people.size,
             slippingCount = people.count { it.isSlipping },
             slipping = domain.sortSlipping(visible.filter { it.isSlipping }).map { it.toListItem() },
-            inTouch = domain.sortInTouch(visible.filterNot { it.isSlipping }).map { it.toListItem() }
+            inTouch = domain.sortInTouch(visible.filterNot { it.isSlipping }).map { it.toListItem() },
+            inTouchLabel = if (filter == PeopleFilter.Untracked) "Untracked" else "In touch"
         )
     }.stateIn(
         scope = viewModelScope,
@@ -54,18 +59,11 @@ class PeopleViewModel @Inject constructor(
 
     fun onAddPersonClick() = navigator.navigate(Screen.AddPerson)
 
-    private fun TrackedPerson.matches(filter: PeopleFilter) = when (filter) {
-        PeopleFilter.ALL -> true
-        PeopleFilter.SLIPPING -> isSlipping
-        PeopleFilter.CLOSE -> person.tag == RelationshipTag.CLOSE_FRIEND
-        PeopleFilter.WORK -> person.tag == RelationshipTag.WORK
-    }
-
     private fun TrackedPerson.toListItem() = PersonListItem(
         id = person.id,
         name = person.name,
         initials = initials(person.name),
-        tag = person.tag,
+        tag = person.tag?.uppercase(),
         cadenceLabel = cadenceLabel(person.cadenceDays),
         lastContactLabel = elapsedLabel(lastInteractionOn, domain.today()),
         isSlipping = isSlipping

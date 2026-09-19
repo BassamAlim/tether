@@ -6,7 +6,6 @@ package bassamalim.tether.core.enums
  */
 enum class CadencePreset(val label: String, val days: Int?) {
     WEEK("Week", 7),
-    TWO_WEEKS("2 weeks", 14),
     MONTH("Month", 30),
     THREE_MONTHS("3 months", 90),
     NEVER("Never", null);

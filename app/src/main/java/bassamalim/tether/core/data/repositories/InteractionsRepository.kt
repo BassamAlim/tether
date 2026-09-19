@@ -64,6 +64,12 @@ class InteractionsRepository @Inject constructor(
 
     suspend fun getAll(): List<Interaction> = interactionsDao.getAll()
 
+    /**
+     * Catch-ups read back out of a backup file. They arrive as new rows: the file carries no
+     * ids, deliberately, so there is nothing to preserve and nothing to collide with.
+     */
+    suspend fun addAll(interactions: List<Interaction>) = interactionsDao.insertAll(interactions)
+
     /** Removing one entry from the history. The undo bar holds the only copy until it fades. */
     suspend fun delete(interaction: Interaction) {
         interactionsDao.delete(interaction)

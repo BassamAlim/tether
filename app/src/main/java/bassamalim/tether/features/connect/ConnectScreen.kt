@@ -1,10 +1,10 @@
 package bassamalim.tether.features.connect
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,23 +14,29 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import bassamalim.tether.core.ui.components.Avatar
-import bassamalim.tether.core.ui.components.FilterPill
-import bassamalim.tether.core.ui.components.LabeledTextField
+import bassamalim.tether.core.ui.components.RelationshipField
 import bassamalim.tether.core.ui.components.SearchField
+import bassamalim.tether.core.ui.components.SectionLabel
+import bassamalim.tether.core.ui.components.SelectionTick
 import bassamalim.tether.core.ui.components.TagChip
 import bassamalim.tether.core.ui.theme.Accent
+import bassamalim.tether.core.ui.theme.Ink
 import bassamalim.tether.core.ui.theme.InkFaint
 import bassamalim.tether.core.ui.theme.InkMuted
 import bassamalim.tether.core.ui.theme.Spacing
@@ -45,54 +51,94 @@ fun ConnectScreen(viewModel: ConnectViewModel = hiltViewModel()) {
     ConnectScreen(
         state = state,
         onQueryChange = viewModel::onQueryChange,
-        onSelect = viewModel::onSelect,
-        onClearSelection = viewModel::onClearSelection,
-        onLabelChange = viewModel::onLabelChange,
+        onToggle = viewModel::onToggle,
+        onNext = viewModel::onNext,
+        onBack = viewModel::onBack,
+        onSharedLabelChange = viewModel::onSharedLabelChange,
         onSuggestionClick = viewModel::onSuggestionClick,
-        onCancel = viewModel::onCancel,
+        onPickClick = viewModel::onPickClick,
+        onPickLabelChange = viewModel::onPickLabelChange,
+        onPickSuggestionClick = viewModel::onPickSuggestionClick,
+        onPickEditDismiss = viewModel::onPickEditDismiss,
+        onPickLabelSave = viewModel::onPickLabelSave,
+        onPickUseSharedLabel = viewModel::onPickUseSharedLabel,
         onSave = viewModel::onSave
     )
 }
 
 /**
- * Two steps on one screen: pick the other person, then say how they know each other. The label
- * is optional — a bare link is still worth having, and you can add the words later.
+ * Two steps on one screen: tick everyone they know, then say how. The label is written once for
+ * the whole batch, because that's how these come to mind — "these six are from university" —
+ * and any one of them can be given its own line instead. Labels stay optional throughout: a
+ * bare link is still worth having, and the words can come later.
  */
 @Composable
 private fun ConnectScreen(
     state: ConnectUiState,
     onQueryChange: (String) -> Unit,
-    onSelect: (Long) -> Unit,
-    onClearSelection: () -> Unit,
-    onLabelChange: (String) -> Unit,
+    onToggle: (Long) -> Unit,
+    onNext: () -> Unit,
+    onBack: () -> Unit,
+    onSharedLabelChange: (String) -> Unit,
     onSuggestionClick: (String) -> Unit,
-    onCancel: () -> Unit,
+    onPickClick: (ConnectPick) -> Unit,
+    onPickLabelChange: (String) -> Unit,
+    onPickSuggestionClick: (String) -> Unit,
+    onPickEditDismiss: () -> Unit,
+    onPickLabelSave: () -> Unit,
+    onPickUseSharedLabel: () -> Unit,
     onSave: () -> Unit
 ) {
+    // The system gesture steps back through the screen the same way the button does, so a long
+    // selection isn't lost by swiping.
+    BackHandler(enabled = state.isLabelling, onBack = onBack)
+
     Column(
         Modifier
             .fillMaxSize()
             .background(Surface0)
     ) {
-        TopBar(canSave = state.canSave, onCancel = onCancel, onSave = onSave)
+        TopBar(
+            backLabel = if (state.isLabelling) "Back" else "Cancel",
+            forwardLabel = if (state.isLabelling) "Save" else "Next",
+            canGoForward = state.hasSelection,
+            onBack = onBack,
+            onForward = if (state.isLabelling) onSave else onNext
+        )
 
-        if (state.selected == null) {
-            PickStep(state = state, onQueryChange = onQueryChange, onSelect = onSelect)
-        } else {
+        if (state.isLabelling) {
             LabelStep(
-                selected = state.selected,
-                personName = state.personName,
-                label = state.label,
-                onClearSelection = onClearSelection,
-                onLabelChange = onLabelChange,
-                onSuggestionClick = onSuggestionClick
+                state = state,
+                onSharedLabelChange = onSharedLabelChange,
+                onSuggestionClick = onSuggestionClick,
+                onPickClick = onPickClick
             )
+        } else {
+            PickStep(state = state, onQueryChange = onQueryChange, onToggle = onToggle)
         }
+    }
+
+    state.editing?.let { editing ->
+        PickLabelDialog(
+            editing = editing,
+            options = state.relationshipOptions,
+            onLabelChange = onPickLabelChange,
+            onSuggestionClick = onPickSuggestionClick,
+            onDismiss = onPickEditDismiss,
+            onSave = onPickLabelSave,
+            onUseShared = onPickUseSharedLabel
+        )
     }
 }
 
 @Composable
-private fun TopBar(canSave: Boolean, onCancel: () -> Unit, onSave: () -> Unit) {
+private fun TopBar(
+    backLabel: String,
+    forwardLabel: String,
+    canGoForward: Boolean,
+    onBack: () -> Unit,
+    onForward: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -100,11 +146,11 @@ private fun TopBar(canSave: Boolean, onCancel: () -> Unit, onSave: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Cancel",
+            text = backLabel,
             style = MaterialTheme.typography.labelMedium,
             color = InkMuted,
             modifier = Modifier
-                .clickable(onClick = onCancel)
+                .clickable(onClick = onBack)
                 .padding(horizontal = Spacing.md, vertical = Spacing.md)
         )
 
@@ -116,12 +162,12 @@ private fun TopBar(canSave: Boolean, onCancel: () -> Unit, onSave: () -> Unit) {
         )
 
         Text(
-            text = "Save",
+            text = forwardLabel,
             style = MaterialTheme.typography.labelLarge,
             // Dimmed rather than hidden, as on New person: you can see what's left to do.
-            color = if (canSave) Accent else InkFaint,
+            color = if (canGoForward) Accent else InkFaint,
             modifier = Modifier
-                .clickable(enabled = canSave, onClick = onSave)
+                .clickable(enabled = canGoForward, onClick = onForward)
                 .padding(horizontal = Spacing.md, vertical = Spacing.md)
         )
     }
@@ -131,7 +177,7 @@ private fun TopBar(canSave: Boolean, onCancel: () -> Unit, onSave: () -> Unit) {
 private fun PickStep(
     state: ConnectUiState,
     onQueryChange: (String) -> Unit,
-    onSelect: (Long) -> Unit
+    onToggle: (Long) -> Unit
 ) {
     SearchField(
         value = state.query,
@@ -141,10 +187,12 @@ private fun PickStep(
     )
 
     Text(
-        text =
-            if (state.personName.isEmpty()) "Pick someone else already in Tether."
-            else "Who does ${state.personName} know? Pick someone else already in Tether — " +
-                    "the link shows on both their pages.",
+        text = when {
+            state.hasSelection -> "${state.selectedCount} selected."
+            state.personName.isEmpty() -> "Tick everyone already in Tether that they know."
+            else -> "Who does ${state.personName} know? Tick everyone that applies — each link " +
+                    "shows on both their pages."
+        },
         style = MaterialTheme.typography.bodySmall,
         color = InkMuted,
         modifier = Modifier.padding(top = 14.dp, start = Spacing.screen, end = Spacing.screen)
@@ -155,7 +203,7 @@ private fun PickStep(
         contentPadding = PaddingValues(top = Spacing.md, bottom = Spacing.lg)
     ) {
         items(state.candidates, key = { it.id }) { candidate ->
-            CandidateRow(candidate = candidate, onClick = { onSelect(candidate.id) })
+            CandidateRow(candidate = candidate, onClick = { onToggle(candidate.id) })
         }
 
         if (!state.isLoading && state.candidates.isEmpty()) {
@@ -178,11 +226,12 @@ private fun PickStep(
 private fun CandidateRow(candidate: ConnectCandidate, onClick: () -> Unit) {
     Row(
         modifier = Modifier
-            .padding(horizontal = Spacing.md, vertical = Spacing.xxs)
+            .padding(horizontal = Spacing.md, vertical = 1.dp)
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.medium)
+            .background(color = if (candidate.isSelected) Surface100 else Color.Transparent)
             .clickable(onClick = onClick)
-            .padding(horizontal = Spacing.sm, vertical = Spacing.md),
+            .padding(horizontal = Spacing.sm, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.md)
     ) {
@@ -195,17 +244,17 @@ private fun CandidateRow(candidate: ConnectCandidate, onClick: () -> Unit) {
         )
 
         candidate.tagLabel?.let { TagChip(label = it) }
+
+        SelectionTick(isSelected = candidate.isSelected)
     }
 }
 
 @Composable
 private fun LabelStep(
-    selected: ConnectCandidate,
-    personName: String,
-    label: String,
-    onClearSelection: () -> Unit,
-    onLabelChange: (String) -> Unit,
-    onSuggestionClick: (String) -> Unit
+    state: ConnectUiState,
+    onSharedLabelChange: (String) -> Unit,
+    onSuggestionClick: (String) -> Unit,
+    onPickClick: (ConnectPick) -> Unit
 ) {
     Column(
         Modifier
@@ -213,71 +262,140 @@ private fun LabelStep(
             .verticalScroll(rememberScrollState())
             .padding(bottom = Spacing.xxl)
     ) {
-        Row(
-            modifier = Modifier
-                .padding(top = Spacing.lg, start = Spacing.screen, end = Spacing.screen)
-                .fillMaxWidth()
-                .background(color = Surface100, shape = MaterialTheme.shapes.medium)
-                .padding(horizontal = Spacing.md, vertical = Spacing.md),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.md)
-        ) {
-            Avatar(initials = selected.initials)
-
-            Column(Modifier.weight(1f)) {
-                Text(text = selected.name, style = MaterialTheme.typography.titleMedium)
-
-                if (personName.isNotEmpty()) {
-                    Text(
-                        text = "with $personName",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = InkFaint,
-                        modifier = Modifier.padding(top = 3.dp)
-                    )
-                }
-            }
-
-            Text(
-                text = "Change",
-                style = MaterialTheme.typography.labelMedium,
-                color = InkMuted,
-                modifier = Modifier
-                    .clip(MaterialTheme.shapes.small)
-                    .clickable(onClick = onClearSelection)
-                    .padding(horizontal = Spacing.sm, vertical = Spacing.xs)
+        Text(
+            text = summary(state),
+            style = MaterialTheme.typography.bodySmall,
+            color = InkMuted,
+            modifier = Modifier.padding(
+                top = Spacing.md,
+                start = Spacing.screen,
+                end = Spacing.screen
             )
-        }
-
-        LabeledTextField(
-            label = "How they know each other",
-            value = label,
-            onValueChange = onLabelChange,
-            placeholder = "Siblings, worked together, met at…",
-            modifier = Modifier.padding(top = 22.dp, start = Spacing.screen, end = Spacing.screen)
         )
 
-        FlowRow(
-            modifier = Modifier
-                .padding(top = 10.dp, start = Spacing.screen, end = Spacing.screen)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-            verticalArrangement = Arrangement.spacedBy(Spacing.sm)
-        ) {
-            CONNECTION_SUGGESTIONS.forEach { suggestion ->
-                FilterPill(
-                    label = suggestion,
-                    selected = label == suggestion,
-                    onClick = { onSuggestionClick(suggestion) }
+        RelationshipField(
+            label = "How they know each other",
+            value = state.sharedLabel,
+            options = state.relationshipOptions,
+            onValueChange = onSharedLabelChange,
+            onOptionClick = onSuggestionClick,
+            modifier = Modifier.padding(
+                top = Spacing.lg,
+                start = Spacing.screen,
+                end = Spacing.screen
+            )
+        )
+
+        SectionLabel(
+            text = "Each person",
+            modifier = Modifier.padding(
+                start = Spacing.screen,
+                end = Spacing.screen,
+                top = Spacing.xl,
+                bottom = Spacing.xs
+            )
+        )
+
+        Text(
+            text = "Everyone follows the line above. Tap someone to write their own instead.",
+            style = TetherType.Caption,
+            color = InkFaint,
+            modifier = Modifier.padding(
+                start = Spacing.screen,
+                end = Spacing.screen,
+                bottom = Spacing.sm
+            )
+        )
+
+        state.picks.forEach { pick ->
+            PickRow(pick = pick, onClick = { onPickClick(pick) })
+        }
+    }
+}
+
+/** "Connecting 4 people to Ahmed." */
+private fun summary(state: ConnectUiState): String {
+    val count = if (state.selectedCount == 1) "1 person" else "${state.selectedCount} people"
+
+    return if (state.personName.isEmpty()) "Connecting $count."
+    else "Connecting $count to ${state.personName}."
+}
+
+@Composable
+private fun PickRow(pick: ConnectPick, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .padding(horizontal = Spacing.md, vertical = 1.dp)
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .clickable(onClick = onClick)
+            .padding(horizontal = Spacing.sm, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+    ) {
+        Avatar(initials = pick.initials)
+
+        Column(Modifier.weight(1f)) {
+            Text(text = pick.name, style = MaterialTheme.typography.titleMedium)
+
+            Text(
+                text = pick.subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                // A line written for this person reads as theirs; an inherited one stays quiet,
+                // so a glance down the list shows which ones you've singled out.
+                color = if (pick.hasOwnLabel) Ink else InkFaint,
+                fontWeight = if (pick.hasOwnLabel) FontWeight(600) else null,
+                modifier = Modifier.padding(top = 3.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun PickLabelDialog(
+    editing: ConnectPickEdit,
+    options: List<String>,
+    onLabelChange: (String) -> Unit,
+    onSuggestionClick: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onSave: () -> Unit,
+    onUseShared: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Surface100,
+        title = { Text(text = editing.name, style = MaterialTheme.typography.titleMedium) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                RelationshipField(
+                    label = "How they know each other",
+                    value = editing.label,
+                    options = options,
+                    onValueChange = onLabelChange,
+                    onOptionClick = onSuggestionClick
+                )
+
+                Text(
+                    text = "This line covers only this one link.",
+                    style = TetherType.Caption,
+                    color = InkFaint,
+                    modifier = Modifier.padding(top = Spacing.md)
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onSave) {
+                Text(text = "Save", style = MaterialTheme.typography.labelLarge, color = Accent)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onUseShared) {
+                Text(
+                    text = "Use shared",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = InkMuted
                 )
             }
         }
-
-        Text(
-            // One label, two pages: it has to make sense read from either end.
-            text = "One line, shown on both their pages, so write it to read the same either way.",
-            style = TetherType.Caption,
-            color = InkFaint,
-            modifier = Modifier.padding(top = 14.dp, start = Spacing.screen, end = Spacing.screen)
-        )
-    }
+    )
 }

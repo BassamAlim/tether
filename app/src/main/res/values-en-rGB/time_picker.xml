@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Material 3 translates the clock dial's period toggle as "a.m." / "p.m." for this English, which
+    overflows the 52dp toggle and disagrees with the "AM" / "PM" everywhere else in Tether.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="m3c_time_picker_am" tools:ignore="PrivateResource">AM</string>
+    <string name="m3c_time_picker_pm" tools:ignore="PrivateResource">PM</string>
+</resources>

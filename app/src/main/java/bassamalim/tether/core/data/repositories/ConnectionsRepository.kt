@@ -21,11 +21,18 @@ class ConnectionsRepository @Inject constructor(
 
     suspend fun getAll(): List<Connection> = connectionsDao.getAll()
 
-    /** Connecting someone to themselves is a no-op rather than a row nothing can render. */
-    suspend fun connect(oneId: Long, otherId: Long, label: String) {
-        if (oneId == otherId) return
+    /**
+     * Links one person to many at once, each with its own label — a batch is how these are
+     * actually gathered, and writing them one by one would leave a half-connected person behind
+     * if it failed partway. Connecting someone to themselves is dropped rather than written as a
+     * row nothing can render.
+     */
+    suspend fun connectAll(personId: Long, labelsByPersonId: Map<Long, String>) {
+        val connections = labelsByPersonId
+            .filterKeys { it != personId }
+            .map { (otherId, label) -> Connection.between(personId, otherId, label.trim()) }
 
-        connectionsDao.insert(Connection.between(oneId, otherId, label.trim()))
+        if (connections.isNotEmpty()) connectionsDao.insertAll(connections)
     }
 
     suspend fun setLabel(id: Long, label: String) = connectionsDao.updateLabel(id, label.trim())
