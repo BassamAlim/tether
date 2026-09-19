@@ -1,4 +1,10 @@
-<!-- Themed-icon silhouette: same mark, flat white for the launcher to tint.
+<!--
+  Themed-icon silhouette of the mark, same geometry as ic_launcher_foreground (108x108 tile, rx 26, mark at
+  translate(18 18) scale(0.75) = 44% of the tile).
+
+  Android only shows the inner 72dp of this 108dp canvas and scales it up to fill the launcher
+  tile, so reproducing that 44% on screen means 0.5 off the 96x96 source art, not 0.75 —
+  placing the mark at 0.75 here renders it half again too large.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -6,17 +12,11 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
     <path
-        android:pathData="M34.8,37.2 H73.2 M54,37.2 V70.8"
+        android:pathData="M42,43.5 H66 M54,43.5 V64.5"
         android:strokeColor="#FFFFFFFF"
-        android:strokeWidth="6.4"
+        android:strokeWidth="4"
         android:strokeLineCap="round" />
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M28.4,37.2 a6.4,6.4 0 1,0 12.8,0 a6.4,6.4 0 1,0 -12.8,0" />
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M66.8,37.2 a6.4,6.4 0 1,0 12.8,0 a6.4,6.4 0 1,0 -12.8,0" />
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M47.6,70.8 a6.4,6.4 0 1,0 12.8,0 a6.4,6.4 0 1,0 -12.8,0" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M38,43.5 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M62,43.5 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M50,64.5 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
 </vector>

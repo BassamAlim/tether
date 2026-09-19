@@ -136,9 +136,12 @@ The weekly nudge is built: `App` supplies Hilt's `HiltWorkerFactory` to WorkMana
 manifest removes `WorkManagerInitializer`), `NudgeScheduler.sync()` runs on every launch and
 whenever the nudge settings change, and `NudgeActionReceiver` handles "Tomorrow".
 
-The launcher icon is the Tether mark as an adaptive icon (`ic_launcher_foreground`, scaled to
-0.8 so the top nodes clear the circular mask launchers may apply), on a surface-0 background,
-with a monochrome layer for themed icons. The same mark is the notification's small icon.
+The launcher icon comes from the design's own app-icon asset: a 108x108 tile with the mark at
+`translate(18 18) scale(0.75)` — 44% of the tile. Android shows only the inner 72dp of the
+108dp canvas and scales it up, so `ic_launcher_foreground` uses **0.5** off the 96x96 source to
+land at that same 44% on screen; copying the asset's 0.75 renders the mark half again too
+large. Background is surface-0 full bleed (the launcher mask supplies the corners), plus a
+monochrome layer for themed icons. The same mark is the notification's small icon.
 
 Three places the implementation reads differently from the boards, all deliberate: the log sheet
 is a `ModalBottomSheet` on its own nav destination, so its scrim covers the app background
