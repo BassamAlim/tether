@@ -1,6 +1,8 @@
 package bassamalim.tether.features.people
 
 import bassamalim.tether.core.domain.DueState
+import bassamalim.tether.core.domain.relationshipKey
+import bassamalim.tether.core.domain.relationshipsInUse
 import bassamalim.tether.core.models.TrackedPerson
 
 /**
@@ -28,16 +30,8 @@ data class FilterOption(val filter: PeopleFilter, val label: String)
 fun filterOptions(people: List<TrackedPerson>): List<FilterOption> {
     val untracked = people.count { it.dueState is DueState.NotTracked }
 
-    val relationships = people
-        .mapNotNull { it.person.tag?.trim()?.takeIf(String::isNotEmpty) }
-        .groupBy { it.lowercase() }
-        .map { (key, spellings) ->
-            // Show the spelling most of them use; ties go to whichever came first.
-            val label = spellings.groupingBy { it }.eachCount().maxBy { it.value }.key
-            Triple(key, label, spellings.size)
-        }
-        .sortedWith(compareByDescending<Triple<String, String, Int>> { it.third }.thenBy { it.second.lowercase() })
-        .map { (key, label, count) -> FilterOption(PeopleFilter.Relationship(key), counted(label, count)) }
+    val relationships = relationshipsInUse(people.map { it.person.tag })
+        .map { FilterOption(PeopleFilter.Relationship(it.key), counted(it.label, it.count)) }
 
     return buildList {
         add(FilterOption(PeopleFilter.All, "All"))
@@ -49,7 +43,7 @@ fun filterOptions(people: List<TrackedPerson>): List<FilterOption> {
 fun TrackedPerson.matches(filter: PeopleFilter) = when (filter) {
     PeopleFilter.All -> true
     PeopleFilter.Untracked -> dueState is DueState.NotTracked
-    is PeopleFilter.Relationship -> person.tag?.trim()?.lowercase() == filter.key
+    is PeopleFilter.Relationship -> relationshipKey(person.tag) == filter.key
 }
 
 private fun counted(label: String, count: Int) = "$label · $count"

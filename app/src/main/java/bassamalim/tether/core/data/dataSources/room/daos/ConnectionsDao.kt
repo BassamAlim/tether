@@ -54,4 +54,8 @@ interface ConnectionsDao {
 
     @Query("SELECT * FROM connections ORDER BY personAId, personBId")
     suspend fun getAll(): List<Connection>
+
+    /** Every edge at once, for Circle, which draws who knows who across everyone. */
+    @Query("SELECT * FROM connections")
+    fun observeAll(): Flow<List<Connection>>
 }

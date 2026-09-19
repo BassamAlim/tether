@@ -31,4 +31,6 @@ object Sizes {
     val bottomBar = 80.dp
     val field = 44.dp
     val border = 1.dp
+    /** One person on Circle, big enough to hold their name; its layout is measured in these. */
+    val orbitNode = 56.dp
 }

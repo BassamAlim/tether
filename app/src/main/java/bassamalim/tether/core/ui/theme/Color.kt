@@ -54,3 +54,21 @@ val Action = Accent
 val Attention = Accent
 /** Focus outline on inputs and interactive elements when navigated by keyboard. */
 val FocusRing = Accent
+
+/**
+ * Circle's relationship colours: the only categorical palette in the app, kept clear of the
+ * accent (no yellow-green) and of [Danger] (no red), since a relationship is neither something to
+ * tap nor something wrong. The order is deliberate — each hue beside the next stays apart under
+ * the common colour-blindnesses on [Surface0] — so assign them in order, never cycled, and fold a
+ * sixth relationship into [RelationshipOther] rather than invent a hue. Colour is never the only
+ * cue: the legend names each one and the dots carry names.
+ */
+val RelationshipHues = listOf(
+    Color(0xFF3987E5), // blue
+    Color(0xFFD95926), // orange
+    Color(0xFF199E70), // aqua
+    Color(0xFF9085E9), // violet
+    Color(0xFFD55181)  // magenta
+)
+/** Every relationship past the fifth, shared. Neutral, so it doesn't read as a sixth hue. */
+val RelationshipOther = InkFaint

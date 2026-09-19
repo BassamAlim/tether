@@ -211,6 +211,21 @@ These are decided; don't re-litigate them in code.
   can keep the reminders you asked for and refuse the standing nudge. Tapping one opens the app
   on that person — pushed on top of the tabs, through the lock if one is set, never around it.
   Reminders are deliberately **not** in the backup: they're pending intentions, not the archive.
+- **Circle is you in the middle and everyone around you** (`features/circle`, a tab between
+  Catch up and Settings). Distance is the cadence, not a score: three rings that never overlap —
+  in touch inside the dashed due ring (further out the more of the cadence has gone by),
+  slipping outside it (a whole cadence overdue or more is the rim), untracked apart on the
+  outside, dimmed, since they have no clock. It reads `DueState`, so it can't disagree with
+  Catch up. Colour is the relationship: the five most-carried relationships get a hue each, in
+  legend order, and the rest share a neutral Other; someone with no relationship is a hollow
+  dot. The hues (`RelationshipHues` in `Color.kt`) are the app's only categorical palette,
+  validated in that order for colour-blind separation on `Surface0`, and deliberately hold no
+  lime and no red — a relationship is neither an action nor an error. Colour is never the only
+  cue: each dot has the person's full name written inside it (never initials — monograms don't
+  identify anyone at a glance), the legend names each hue and taps to dim the rest, and tapping
+  a dot opens a card naming the person. Spokes run from you to everyone; connections are faint
+  lines between people. The layout (`CircleLayout.kt`) is pure and deterministic, in node
+  diameters, so the same people always land in the same places.
 - **Lock** is `BiometricPrompt` on cold start and after 60s in the background, with device
   credential as the fallback. It stops someone picking up an unlocked phone; it is not encryption
   at rest, and the UI should not imply otherwise. The rule lives in `core/lock/LockManager`
@@ -221,7 +236,7 @@ These are decided; don't re-litigate them in code.
 
 ## Current state
 
-Every designed screen is built: **People**, **New person**, **Catch up** (one-tap log and undo
+Every designed screen is built, plus **Circle** (the graph tab): **People**, **New person**, **Catch up** (one-tap log and undo
 bar), **Person detail**, **Log a catch-up**, **Search**, **Settings**, **First run**, **From
 contacts** and **Locked**.
 
@@ -282,6 +297,9 @@ The launcher icon comes from the design's own app-icon asset: a 108x108 tile wit
 land at that same 44% on screen; copying the asset's 0.75 renders the mark half again too
 large. Background is surface-0 full bleed (the launcher mask supplies the corners), plus a
 monochrome layer for themed icons. The same mark is the notification's small icon.
+
+Circle has no board — it came after the design — so it borrows People's header, subtitle and sideways chip row, and the
+selected-person card follows People's rows.
 
 Neither Connect nor the set-up walk has a board — the design predates both — so Connect follows
 New person's shape

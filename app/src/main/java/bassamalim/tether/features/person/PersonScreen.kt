@@ -687,6 +687,9 @@ private fun ConnectionDialog(
     )
 }
 
+/** A history entry's first line: the menu's touch target, which everything else centres on. */
+private val HistoryHeaderHeight = 28.dp
+
 @Composable
 private fun HistoryRow(
     entry: HistoryEntry,
@@ -710,10 +713,18 @@ private fun HistoryRow(
         Column(
             modifier = Modifier
                 .width(Spacing.sm)
-                .fillMaxHeight()
-                .padding(top = 5.dp),
+                .fillMaxHeight(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // The dot sits on the header's centre line, level with the title, the date and
+            // the menu; the rail runs into it from the entry above.
+            Box(
+                Modifier
+                    .width(Sizes.border)
+                    .height((HistoryHeaderHeight - Spacing.sm) / 2)
+                    .background(if (isFirst) Color.Transparent else Surface300)
+            )
+
             Box(
                 Modifier
                     .size(Spacing.sm)
@@ -736,9 +747,11 @@ private fun HistoryRow(
                 .padding(bottom = if (isLast) 0.dp else Spacing.lg)
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(HistoryHeaderHeight),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.md),
-                verticalAlignment = Alignment.Bottom
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = entry.title,
@@ -795,7 +808,7 @@ private fun HistoryMenu(
     Box {
         Box(
             modifier = Modifier
-                .size(28.dp)
+                .size(HistoryHeaderHeight)
                 .clip(Pill)
                 .clickable(onClick = onOpen),
             contentAlignment = Alignment.Center

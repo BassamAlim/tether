@@ -26,6 +26,7 @@ import bassamalim.tether.core.ui.theme.Ink
 import bassamalim.tether.core.ui.theme.InkFaint
 import bassamalim.tether.core.ui.theme.Surface0
 import bassamalim.tether.features.catchUp.CatchUpScreen
+import bassamalim.tether.features.circle.CircleScreen
 import bassamalim.tether.features.people.PeopleScreen
 import bassamalim.tether.features.settings.SettingsScreen
 import androidx.annotation.DrawableRes
@@ -85,6 +86,7 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
             when (selected) {
                 MainTab.PEOPLE -> PeopleScreen()
                 MainTab.CATCH_UP -> CatchUpScreen()
+                MainTab.CIRCLE -> CircleScreen()
                 MainTab.SETTINGS -> SettingsScreen()
             }
         }
@@ -94,5 +96,6 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
 enum class MainTab(val label: String, @param:DrawableRes val icon: Int) {
     PEOPLE("People", R.drawable.ic_people),
     CATCH_UP("Catch up", R.drawable.ic_bell),
+    CIRCLE("Circle", R.drawable.ic_circle),
     SETTINGS("Settings", R.drawable.ic_settings)
 }

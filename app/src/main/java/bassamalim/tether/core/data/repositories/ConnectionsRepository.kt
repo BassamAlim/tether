@@ -19,6 +19,8 @@ class ConnectionsRepository @Inject constructor(
     fun observeConnectedIds(personId: Long): Flow<List<Long>> =
         connectionsDao.observeConnectedIds(personId)
 
+    fun observeAll(): Flow<List<Connection>> = connectionsDao.observeAll()
+
     suspend fun getAll(): List<Connection> = connectionsDao.getAll()
 
     /**
