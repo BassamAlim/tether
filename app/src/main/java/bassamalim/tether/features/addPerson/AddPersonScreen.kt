@@ -119,7 +119,7 @@ private fun AddPersonScreen(
             }
 
             Text(
-                text = "This is the only field that makes Tether a CRM — it's what the Catch up " +
+                text = "This is the only field that makes Tether a CRM: it's what the Catch up " +
                         "screen counts from.",
                 style = TetherType.Caption,
                 color = InkFaint,
@@ -173,7 +173,7 @@ private fun TopBar(canSave: Boolean, onCancel: () -> Unit, onSave: () -> Unit) {
     }
 }
 
-// TODO: photos aren't stored yet — wire this to a picker when Person gets a photo.
+// TODO: photos aren't stored yet; wire this to a picker when Person gets a photo.
 @Composable
 private fun PhotoButton(modifier: Modifier = Modifier) {
     // The board draws this outline dashed, which Compose has no Border for.

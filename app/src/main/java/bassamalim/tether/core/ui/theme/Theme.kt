@@ -6,7 +6,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 
 /**
- * Tether is dark-only by design: no light scheme, and no dynamic color — the lime accent is the
+ * Tether is dark-only by design: no light scheme, and no dynamic color: the lime accent is the
  * app's single recognizable signal and Material You would take it away.
  */
 private val TetherColorScheme = darkColorScheme(
@@ -50,7 +50,7 @@ fun TetherTheme(content: @Composable () -> Unit) {
         shapes = Shapes
     ) {
         // The whole app sits on one Surface so that text with no explicit colour inherits [Ink].
-        // Without it, Compose's default content colour is black — invisible on Surface0, and
+        // Without it, Compose's default content colour is black, invisible on Surface0, and
         // only screens that happened to sit inside a Scaffold were spared.
         Surface(color = Surface0, contentColor = Ink, content = content)
     }

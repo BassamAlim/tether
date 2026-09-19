@@ -6,7 +6,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
- * One line of the DETAILS card — "Met: Riyadh JS meetup, 2023", "Kids: Lina (4)".
+ * One line of the DETAILS card, e.g. "Met: Riyadh JS meetup, 2023", "Kids: Lina (4)".
  *
  * Free-form label/value pairs rather than fixed columns, because the details worth keeping are
  * different for every person and the point is to record what you'd be embarrassed to forget.

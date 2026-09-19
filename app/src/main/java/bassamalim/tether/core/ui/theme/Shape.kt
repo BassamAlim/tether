@@ -13,5 +13,5 @@ val Shapes = Shapes(
     extraLarge = RoundedCornerShape(28.dp)   // radius-xl: large sheets and modals
 )
 
-/** radius-full — avatars and pill-shaped chips. */
+/** radius-full: avatars and pill-shaped chips. */
 val Pill = RoundedCornerShape(percent = 50)

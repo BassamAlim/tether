@@ -44,7 +44,7 @@ class LabelsTest {
     @Test
     fun `the status line pairs when you last talked with how overdue that leaves you`() {
         assertEquals(
-            "Last talked 7 weeks ago — 5 weeks overdue",
+            "Last talked 7 weeks ago, 5 weeks overdue",
             lastTalkedStatus(
                 lastInteractionOn = LocalDate.of(2026, 8, 1),
                 daysOverdue = 35,

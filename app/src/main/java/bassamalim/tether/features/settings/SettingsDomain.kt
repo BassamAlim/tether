@@ -29,7 +29,7 @@ class SettingsDomain @Inject constructor(
     fun observeNudgeOnlyWhenOverdue(): Flow<Boolean> =
         preferencesRepository.observeNudgeOnlyWhenOverdue()
 
-    fun observeDefaultCadenceDays(): Flow<Int> = preferencesRepository.observeDefaultCadenceDays()
+    fun observeDefaultCadenceDays(): Flow<Int?> = preferencesRepository.observeDefaultCadenceDays()
 
     /** Every change to when the nudge lands re-books the pending one. */
     suspend fun setNudgeEnabled(enabled: Boolean) {
@@ -46,7 +46,7 @@ class SettingsDomain @Inject constructor(
     suspend fun setNudgeOnlyWhenOverdue(enabled: Boolean) =
         preferencesRepository.setNudgeOnlyWhenOverdue(enabled)
 
-    suspend fun setDefaultCadenceDays(days: Int) = preferencesRepository.setDefaultCadenceDays(days)
+    suspend fun setDefaultCadenceDays(days: Int?) = preferencesRepository.setDefaultCadenceDays(days)
 
     fun backupFileName(): String = "tether-backup-${LocalDate.now(clock)}.json"
 
@@ -80,9 +80,6 @@ class SettingsDomain @Inject constructor(
 
         return json.encodeToString(backup)
     }
-
-    /** Deleting the people cascades to their details and history. */
-    suspend fun deleteEverything() = peopleRepository.deleteAll()
 
     private companion object {
         val json = Json { prettyPrint = true }

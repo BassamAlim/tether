@@ -1,7 +1,7 @@
 package bassamalim.tether.core.enums
 
 /**
- * The cadences the app offers. Cadence is set at creation rather than buried in settings — it's
+ * The cadences the app offers. Cadence is set at creation rather than buried in settings: it's
  * the single field the whole nudge engine reads.
  */
 enum class CadencePreset(val label: String, val days: Int?) {

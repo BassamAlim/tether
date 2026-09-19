@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import bassamalim.tether.core.ui.theme.Accent
 import bassamalim.tether.core.ui.theme.AccentWash
@@ -32,7 +33,26 @@ fun TagChip(label: String, modifier: Modifier = Modifier) {
     )
 }
 
-/** A filter pill. Selected is the accent wash — the one place a list may spend the accent. */
+/**
+ * A read-only badge for a fact on a row, such as a cadence beside a relationship chip. Same
+ * shape as [TagChip] but sentence case, because it's a frequency rather than a category.
+ */
+@Composable
+fun InfoChip(label: String, modifier: Modifier = Modifier) {
+    Text(
+        text = label,
+        style = MaterialTheme.typography.bodySmall,
+        // ink-muted, matching TagChip. The design had this as ink-faint, but that was plain text
+        // set deliberately quieter than the chip beside it; as a badge it just looked wrong.
+        color = InkMuted,
+        modifier = modifier
+            .clip(Pill)
+            .background(color = Surface200)
+            .padding(horizontal = 8.dp, vertical = 3.dp)
+    )
+}
+
+/** A filter pill. Selected is the accent wash, the one place a list may spend the accent. */
 @Composable
 fun FilterPill(
     label: String,
@@ -43,7 +63,8 @@ fun FilterPill(
     Box(
         modifier = modifier
             .height(Sizes.field)
-            .background(color = if (selected) AccentWash else Surface200, shape = Pill)
+            .clip(Pill)
+            .background(color = if (selected) AccentWash else Surface200)
             .clickable(onClick = onClick)
             .padding(PaddingValues(horizontal = 16.dp)),
         contentAlignment = Alignment.Center

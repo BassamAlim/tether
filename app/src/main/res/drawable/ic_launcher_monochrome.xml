@@ -3,7 +3,7 @@
   translate(18 18) scale(0.75) = 44% of the tile).
 
   Android only shows the inner 72dp of this 108dp canvas and scales it up to fill the launcher
-  tile, so reproducing that 44% on screen means 0.5 off the 96x96 source art, not 0.75 —
+  tile, so reproducing that 44% on screen means 0.5 off the 96x96 source art, not 0.75;
   placing the mark at 0.75 here renders it half again too large.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"

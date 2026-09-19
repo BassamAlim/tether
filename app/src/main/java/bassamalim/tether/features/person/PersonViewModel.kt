@@ -7,6 +7,8 @@ import androidx.navigation.toRoute
 import bassamalim.tether.core.data.dataSources.room.entities.Interaction
 import bassamalim.tether.core.data.dataSources.room.entities.PersonDetail
 import bassamalim.tether.core.domain.DueState
+import bassamalim.tether.core.enums.CadencePreset
+import bassamalim.tether.core.enums.RelationshipTag
 import bassamalim.tether.core.models.TrackedPerson
 import bassamalim.tether.core.nav.Navigator
 import bassamalim.tether.core.nav.Screen
@@ -53,6 +55,31 @@ class PersonViewModel @Inject constructor(
 
     fun onLogCatchUp() = navigator.navigate(Screen.LogInteraction(personId))
 
+    fun onTagClick() = localState.update { it.copy(isPickingTag = true) }
+
+    fun onTagDismiss() = localState.update { it.copy(isPickingTag = false) }
+
+    /** Relationships change; the row that shows them should too. */
+    fun onTagSelect(tag: RelationshipTag?) {
+        localState.update { it.copy(isPickingTag = false) }
+
+        viewModelScope.launch { domain.setTag(personId, tag) }
+    }
+
+    fun onCadenceClick() = localState.update { it.copy(isPickingCadence = true) }
+
+    fun onCadenceDismiss() = localState.update { it.copy(isPickingCadence = false) }
+
+    /**
+     * Changing the cadence re-dates when they come due, counted from the last catch-up as
+     * always, so tightening it can make someone overdue immediately.
+     */
+    fun onCadenceSelect(preset: CadencePreset) {
+        localState.update { it.copy(isPickingCadence = false) }
+
+        viewModelScope.launch { domain.setCadence(personId, preset.days) }
+    }
+
     fun onMenuOpen() = localState.update { it.copy(isMenuOpen = true) }
 
     fun onMenuDismiss() = localState.update { it.copy(isMenuOpen = false) }
@@ -69,6 +96,8 @@ class PersonViewModel @Inject constructor(
     }
 
     private data class LocalState(
+        val isPickingTag: Boolean = false,
+        val isPickingCadence: Boolean = false,
         val isMenuOpen: Boolean = false,
         val isConfirmingDelete: Boolean = false
     )
@@ -85,7 +114,9 @@ class PersonViewModel @Inject constructor(
             id = person.id,
             name = person.name,
             initials = initials(person.name),
+            tag = person.tag,
             tagLabel = person.tag?.chipLabel,
+            cadence = CadencePreset.of(person.cadenceDays),
             cadenceLabel = cadenceLabel(person.cadenceDays),
             status = lastTalkedStatus(
                 lastInteractionOn = lastInteractionOn,
@@ -103,6 +134,8 @@ class PersonViewModel @Inject constructor(
                     note = interaction.note.takeIf { it.isNotBlank() }
                 )
             },
+            isPickingTag = local.isPickingTag,
+            isPickingCadence = local.isPickingCadence,
             isMenuOpen = local.isMenuOpen,
             isConfirmingDelete = local.isConfirmingDelete
         )

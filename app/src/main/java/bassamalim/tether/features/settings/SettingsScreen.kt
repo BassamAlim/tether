@@ -86,7 +86,6 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             val message = when (event) {
                 is SettingsEvent.BackupWritten ->
                     if (event.succeeded) "Backup saved." else "Couldn't write that backup."
-                SettingsEvent.EverythingDeleted -> "Everything deleted."
             }
 
             snackbarHostState.currentSnackbarData?.dismiss()
@@ -119,8 +118,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             onNudgeOnlyWhenOverdueChange = viewModel::onNudgeOnlyWhenOverdueChange,
             onCadenceClick = viewModel::onCadenceClick,
             onExportClick = { exportLauncher.launch(viewModel.backupFileName()) },
-            onImportClick = viewModel::onImportClick,
-            onWipeClick = viewModel::onWipeClick
+            onImportClick = viewModel::onImportClick
         )
     }
 
@@ -140,10 +138,6 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             onSelect = viewModel::onCadenceChange
         )
     }
-
-    if (state.isConfirmingWipe) {
-        WipeDialog(onDismiss = viewModel::onWipeDismiss, onConfirm = viewModel::onWipeConfirm)
-    }
 }
 
 @Composable
@@ -155,8 +149,7 @@ private fun SettingsContent(
     onNudgeOnlyWhenOverdueChange: (Boolean) -> Unit,
     onCadenceClick: () -> Unit,
     onExportClick: () -> Unit,
-    onImportClick: () -> Unit,
-    onWipeClick: () -> Unit
+    onImportClick: () -> Unit
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -254,23 +247,6 @@ private fun SettingsContent(
             }
         }
 
-        item {
-            Box(
-                modifier = Modifier
-                    .padding(top = Spacing.screen, start = Spacing.screen, end = Spacing.screen)
-                    .fillMaxWidth()
-                    .height(52.dp)
-                    .background(color = DangerWash, shape = MaterialTheme.shapes.medium)
-                    .clickable(onClick = onWipeClick),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Delete everything",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = Danger
-                )
-            }
-        }
     }
 }
 
@@ -389,9 +365,7 @@ private fun CadenceDialog(
         },
         text = {
             Column {
-                // "Never" is missing on purpose: a default of never would add people the app
-                // then says nothing about.
-                CadencePreset.entries.filter { it.days != null }.forEach { preset ->
+                CadencePreset.entries.forEach { preset ->
                     Text(
                         text = preset.label,
                         style = MaterialTheme.typography.bodyMedium,
@@ -412,33 +386,3 @@ private fun CadenceDialog(
     )
 }
 
-@Composable
-private fun WipeDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Surface100,
-        title = { Text(text = "Delete everything?", style = MaterialTheme.typography.titleMedium) },
-        text = {
-            Text(
-                text = "Every person, detail and catch-up you've logged. There's no server and " +
-                        "no account, so unless you've exported a backup, this is the only copy.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = InkMuted
-            )
-        },
-        confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text(
-                    text = "Delete everything",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = Danger
-                )
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(text = "Keep it", style = MaterialTheme.typography.labelLarge, color = InkMuted)
-            }
-        }
-    )
-}

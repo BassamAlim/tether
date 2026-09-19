@@ -13,7 +13,7 @@ data class PeopleUiState(
     val isEmpty get() = !isLoading && slipping.isEmpty() && inTouch.isEmpty()
 }
 
-/** A row, already formatted — the screen shouldn't be doing date math. */
+/** A row, already formatted: the screen shouldn't be doing date math. */
 data class PersonListItem(
     val id: Long,
     val name: String,

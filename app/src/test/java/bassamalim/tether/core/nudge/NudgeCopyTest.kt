@@ -28,7 +28,7 @@ class NudgeCopyTest {
         val copy = nudgeCopy(listOf(SlippingPerson("Sara Lund", daysOverdue = 7, cadenceDays = 7)))
 
         assertEquals("1 person is slipping", copy.title)
-        // Spans under a fortnight stay in days — "7 days" is clearer than "1 week" here.
+        // Spans under a fortnight stay in days: "7 days" is clearer than "1 week" here.
         assertEquals("Sara Lund is 7 days past your weekly check-in.", copy.body)
     }
 

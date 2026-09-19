@@ -1,11 +1,14 @@
 package bassamalim.tether.features.person
 
+import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -29,15 +32,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import bassamalim.tether.core.enums.CadencePreset
+import bassamalim.tether.core.enums.RelationshipTag
+import bassamalim.tether.core.ui.components.FilterPill
 import bassamalim.tether.core.ui.components.SectionLabel
+import bassamalim.tether.core.utils.internationalDigits
 import bassamalim.tether.core.ui.theme.Accent
 import bassamalim.tether.core.ui.theme.AccentInk
 import bassamalim.tether.core.ui.theme.Action
@@ -65,12 +74,14 @@ fun PersonScreen(viewModel: PersonViewModel = hiltViewModel()) {
     PersonScreen(
         state = state,
         onBack = viewModel::onBack,
+        onTagClick = viewModel::onTagClick,
+        onTagDismiss = viewModel::onTagDismiss,
+        onTagSelect = viewModel::onTagSelect,
+        onCadenceClick = viewModel::onCadenceClick,
+        onCadenceDismiss = viewModel::onCadenceDismiss,
+        onCadenceSelect = viewModel::onCadenceSelect,
         onLogCatchUp = viewModel::onLogCatchUp,
-        onMessage = {
-            state.phone?.let { phone ->
-                context.startActivity(Intent(Intent.ACTION_SENDTO, "smsto:$phone".toUri()))
-            }
-        },
+        onMessage = { state.phone?.let { context.openWhatsApp(it) } },
         onMenuOpen = viewModel::onMenuOpen,
         onMenuDismiss = viewModel::onMenuDismiss,
         onDeleteClick = viewModel::onDeleteClick,
@@ -79,10 +90,40 @@ fun PersonScreen(viewModel: PersonViewModel = hiltViewModel()) {
     )
 }
 
+/**
+ * Opens the chat in WhatsApp. First choice hands WhatsApp the raw number so it matches the
+ * contact itself; if that fails, wa.me needs the number in international form. Neither works
+ * without WhatsApp installed, so SMS is the last resort rather than the default.
+ */
+private fun Context.openWhatsApp(phone: String) {
+    val attempts = listOfNotNull(
+        Intent(Intent.ACTION_SENDTO, "smsto:$phone".toUri()).setPackage(WHATSAPP),
+        internationalDigits(phone)?.let { Intent(Intent.ACTION_VIEW, "https://wa.me/$it".toUri()) },
+        Intent(Intent.ACTION_SENDTO, "smsto:$phone".toUri())
+    )
+
+    for (intent in attempts) {
+        try {
+            startActivity(intent)
+            return
+        } catch (_: ActivityNotFoundException) {
+            // Try the next way in.
+        }
+    }
+}
+
+private const val WHATSAPP = "com.whatsapp"
+
 @Composable
 private fun PersonScreen(
     state: PersonUiState,
     onBack: () -> Unit,
+    onTagClick: () -> Unit,
+    onTagDismiss: () -> Unit,
+    onTagSelect: (RelationshipTag?) -> Unit,
+    onCadenceClick: () -> Unit,
+    onCadenceDismiss: () -> Unit,
+    onCadenceSelect: (CadencePreset) -> Unit,
     onLogCatchUp: () -> Unit,
     onMessage: () -> Unit,
     onMenuOpen: () -> Unit,
@@ -108,7 +149,7 @@ private fun PersonScreen(
         }
 
         item {
-            Identity(state = state)
+            Identity(state = state, onTagClick = onTagClick, onCadenceClick = onCadenceClick)
         }
 
         item {
@@ -141,6 +182,22 @@ private fun PersonScreen(
         itemsIndexed(state.history, key = { _, entry -> entry.id }) { index, entry ->
             HistoryRow(entry = entry, isFirst = index == 0, isLast = index == state.history.lastIndex)
         }
+    }
+
+    if (state.isPickingTag) {
+        RelationshipDialog(
+            selected = state.tag,
+            onDismiss = onTagDismiss,
+            onSelect = onTagSelect
+        )
+    }
+
+    if (state.isPickingCadence) {
+        CadenceDialog(
+            selected = state.cadence,
+            onDismiss = onCadenceDismiss,
+            onSelect = onCadenceSelect
+        )
     }
 
     if (state.isConfirmingDelete) {
@@ -206,7 +263,11 @@ private fun TopBar(
 }
 
 @Composable
-private fun Identity(state: PersonUiState) {
+private fun Identity(
+    state: PersonUiState,
+    onTagClick: () -> Unit,
+    onCadenceClick: () -> Unit
+) {
     Column(Modifier.padding(top = Spacing.sm, start = Spacing.screen, end = Spacing.screen)) {
         Box(
             modifier = Modifier
@@ -233,21 +294,20 @@ private fun Identity(state: PersonUiState) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
         ) {
-            state.tagLabel?.let { label ->
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = InkMuted,
-                    modifier = Modifier
-                        .background(color = Surface200, shape = Pill)
-                        .padding(horizontal = 9.dp, vertical = Spacing.xs)
-                )
-            }
+            // Both are badges because both are editable; a bare line of text reads as a fact
+            // about the person rather than something you can change.
+            HeaderChip(
+                text = state.tagLabel ?: "SET RELATIONSHIP",
+                style = MaterialTheme.typography.labelSmall,
+                color = if (state.tagLabel != null) InkMuted else InkFaint,
+                onClick = onTagClick
+            )
 
-            Text(
+            HeaderChip(
                 text = state.cadenceLabel,
                 style = MaterialTheme.typography.bodySmall,
-                color = InkMuted
+                color = InkMuted,
+                onClick = onCadenceClick
             )
         }
 
@@ -262,6 +322,25 @@ private fun Identity(state: PersonUiState) {
 }
 
 @Composable
+private fun HeaderChip(
+    text: String,
+    style: TextStyle,
+    color: Color,
+    onClick: () -> Unit
+) {
+    Text(
+        text = text,
+        style = style,
+        color = color,
+        modifier = Modifier
+            .clip(Pill)
+            .background(color = Surface200)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 9.dp, vertical = Spacing.xs)
+    )
+}
+
+@Composable
 private fun Actions(canMessage: Boolean, onLogCatchUp: () -> Unit, onMessage: () -> Unit) {
     Row(
         modifier = Modifier
@@ -273,7 +352,8 @@ private fun Actions(canMessage: Boolean, onLogCatchUp: () -> Unit, onMessage: ()
             modifier = Modifier
                 .weight(1f)
                 .height(48.dp)
-                .background(color = Action, shape = MaterialTheme.shapes.medium)
+                .clip(MaterialTheme.shapes.medium)
+                .background(color = Action)
                 .clickable(onClick = onLogCatchUp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm, Alignment.CenterHorizontally)
@@ -292,7 +372,7 @@ private fun Actions(canMessage: Boolean, onLogCatchUp: () -> Unit, onMessage: ()
             )
         }
 
-        // TODO: per-person reminders aren't built yet — the weekly nudge is all there is.
+        // TODO: per-person reminders aren't built yet; the weekly nudge is all there is.
         SquareIconButton(enabled = false, onClick = {}) {
             Icon(
                 painter = painterResource(R.drawable.ic_bell),
@@ -305,7 +385,7 @@ private fun Actions(canMessage: Boolean, onLogCatchUp: () -> Unit, onMessage: ()
         SquareIconButton(enabled = canMessage, onClick = onMessage) {
             Icon(
                 painter = painterResource(R.drawable.ic_message),
-                contentDescription = "Send a message",
+                contentDescription = "Message on WhatsApp",
                 tint = if (canMessage) Ink else InkFaint,
                 modifier = Modifier.size(19.dp)
             )
@@ -421,6 +501,87 @@ private fun HistoryRow(entry: HistoryEntry, isFirst: Boolean, isLast: Boolean) {
 }
 
 @Composable
+private fun RelationshipDialog(
+    selected: RelationshipTag?,
+    onDismiss: () -> Unit,
+    onSelect: (RelationshipTag?) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Surface100,
+        title = { Text(text = "Relationship", style = MaterialTheme.typography.titleMedium) },
+        text = {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+            ) {
+                RelationshipTag.entries.forEach { tag ->
+                    FilterPill(
+                        label = tag.label,
+                        selected = tag == selected,
+                        onClick = { onSelect(tag) }
+                    )
+                }
+
+                // Tapping the current one clears it, but "None" makes that discoverable.
+                FilterPill(
+                    label = "None",
+                    selected = selected == null,
+                    onClick = { onSelect(null) }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = "Close", style = MaterialTheme.typography.labelLarge, color = InkMuted)
+            }
+        }
+    )
+}
+
+@Composable
+private fun CadenceDialog(
+    selected: CadencePreset,
+    onDismiss: () -> Unit,
+    onSelect: (CadencePreset) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Surface100,
+        title = { Text(text = "Reach out every", style = MaterialTheme.typography.titleMedium) },
+        text = {
+            Column {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+                ) {
+                    CadencePreset.entries.forEach { preset ->
+                        FilterPill(
+                            label = preset.label,
+                            selected = preset == selected,
+                            onClick = { onSelect(preset) }
+                        )
+                    }
+                }
+
+                Text(
+                    text = "Counted from your last catch-up, so a shorter cadence can make " +
+                            "someone overdue straight away.",
+                    style = TetherType.Caption,
+                    color = InkFaint,
+                    modifier = Modifier.padding(top = Spacing.md)
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = "Close", style = MaterialTheme.typography.labelLarge, color = InkMuted)
+            }
+        }
+    )
+}
+
+@Composable
 private fun DeleteDialog(name: String, onDismiss: () -> Unit, onConfirm: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -466,6 +627,7 @@ private fun CircleIconButton(onClick: () -> Unit, content: @Composable () -> Uni
     Box(
         modifier = Modifier
             .size(Sizes.avatar)
+            .clip(Pill)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
         content = { content() }
@@ -481,7 +643,8 @@ private fun SquareIconButton(
     Box(
         modifier = Modifier
             .size(48.dp)
-            .background(color = Surface200, shape = MaterialTheme.shapes.medium)
+            .clip(MaterialTheme.shapes.medium)
+            .background(color = Surface200)
             .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
         content = { content() }

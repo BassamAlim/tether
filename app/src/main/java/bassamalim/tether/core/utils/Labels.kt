@@ -58,7 +58,7 @@ fun elapsedLabel(date: LocalDate?, today: LocalDate): String {
     }
 }
 
-/** "today", "yesterday", "7 weeks ago" — the long form, for a person's own screen. */
+/** "today", "yesterday", "7 weeks ago": the long form, for a person's own screen. */
 fun agoLabel(date: LocalDate, today: LocalDate): String {
     val days = ChronoUnit.DAYS.between(date, today)
 
@@ -69,7 +69,7 @@ fun agoLabel(date: LocalDate, today: LocalDate): String {
     }
 }
 
-/** "5 weeks past your 2-week check-in" — why this person is on the Catch up list. */
+/** "5 weeks past your 2-week check-in": why this person is on the Catch up list. */
 fun overdueReason(daysOverdue: Long, cadenceDays: Int?): String {
     val cadence = cadenceAdjective(cadenceDays)
 
@@ -78,7 +78,7 @@ fun overdueReason(daysOverdue: Long, cadenceDays: Int?): String {
 }
 
 /**
- * The line under a person's name: "Last talked 7 weeks ago — 5 weeks overdue".
+ * The line under a person's name: "Last talked 7 weeks ago, 5 weeks overdue".
  *
  * [daysOverdue] is null when they aren't due (or aren't tracked at all).
  */
@@ -89,8 +89,8 @@ fun lastTalkedStatus(lastInteractionOn: LocalDate?, daysOverdue: Long?, today: L
 
     return when {
         daysOverdue == null -> talked
-        daysOverdue == 0L -> "$talked — due today"
-        else -> "$talked — ${durationLabel(daysOverdue)} overdue"
+        daysOverdue == 0L -> "$talked, due today"
+        else -> "$talked, ${durationLabel(daysOverdue)} overdue"
     }
 }
 
@@ -101,7 +101,7 @@ fun dueReason(daysUntilDue: Long): String = when (daysUntilDue) {
     else -> "Due in $daysUntilDue days"
 }
 
-/** "3 days", "5 weeks", "2 months" — a span, without the "ago". */
+/** "3 days", "5 weeks", "2 months": a span, without the "ago". */
 fun durationLabel(days: Long): String = when {
     days < 14L -> count(days, "day")
     days < 60L -> count(days / 7, "week")

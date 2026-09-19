@@ -46,7 +46,7 @@ class SettingsViewModel @Inject constructor(
         val day = values[1] as DayOfWeek
         val time = values[2] as LocalTime
         val onlyWhenOverdue = values[3] as Boolean
-        val cadenceDays = values[4] as Int
+        val cadenceDays = values[4] as Int?
         val open = values[5] as Dialogs
 
         SettingsUiState(
@@ -59,8 +59,7 @@ class SettingsViewModel @Inject constructor(
             defaultCadenceLabel = cadenceValueLabel(cadenceDays),
             version = BuildConfig.VERSION_NAME,
             isPickingSchedule = open.schedule,
-            isPickingCadence = open.cadence,
-            isConfirmingWipe = open.wipe
+            isPickingCadence = open.cadence
         )
     }.stateIn(
         scope = viewModelScope,
@@ -92,10 +91,7 @@ class SettingsViewModel @Inject constructor(
     fun onCadenceChange(preset: CadencePreset) {
         dialogs.update { it.copy(cadence = false) }
 
-        // "Never" as a default would add people nobody ever nudges you about.
-        val days = preset.days ?: return
-
-        viewModelScope.launch { domain.setDefaultCadenceDays(days) }
+        viewModelScope.launch { domain.setDefaultCadenceDays(preset.days) }
     }
 
     fun backupFileName(): String = domain.backupFileName()
@@ -110,23 +106,9 @@ class SettingsViewModel @Inject constructor(
 
     fun onImportClick() = navigator.navigate(Screen.ImportContacts)
 
-    fun onWipeClick() = dialogs.update { it.copy(wipe = true) }
-
-    fun onWipeDismiss() = dialogs.update { it.copy(wipe = false) }
-
-    fun onWipeConfirm() {
-        dialogs.update { it.copy(wipe = false) }
-
-        viewModelScope.launch {
-            domain.deleteEverything()
-            _events.send(SettingsEvent.EverythingDeleted)
-        }
-    }
-
     private data class Dialogs(
         val schedule: Boolean = false,
-        val cadence: Boolean = false,
-        val wipe: Boolean = false
+        val cadence: Boolean = false
     )
 
     private companion object {

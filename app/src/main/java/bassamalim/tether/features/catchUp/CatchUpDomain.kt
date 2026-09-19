@@ -19,7 +19,7 @@ class CatchUpDomain @Inject constructor(
 
     fun observeDue(): Flow<DuePeople> = trackedPeople.observe().map { people ->
         DuePeople(
-            // Most overdue first — the person you're losing fastest is the one to call.
+            // Most overdue first: the person you're losing fastest is the one to call.
             overdue = people
                 .filter { it.dueState is DueState.Slipping }
                 .sortedByDescending { (it.dueState as DueState.Slipping).daysOverdue },
@@ -36,7 +36,7 @@ class CatchUpDomain @Inject constructor(
 
     /**
      * A one-tap log: no type, no note, dated today. Returns the interaction id so the tap can be
-     * undone — the tap is easy to make by accident and the data is irreplaceable.
+     * undone: the tap is easy to make by accident and the data is irreplaceable.
      */
     suspend fun logReachedOut(personId: Long): Long =
         interactionsRepository.log(personId = personId, occurredOn = trackedPeople.today())

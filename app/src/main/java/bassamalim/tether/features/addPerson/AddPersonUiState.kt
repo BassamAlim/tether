@@ -6,7 +6,7 @@ import bassamalim.tether.core.enums.RelationshipTag
 data class AddPersonUiState(
     val name: String = "",
     val tag: RelationshipTag? = null,
-    val cadence: CadencePreset = CadencePreset.MONTH,
+    val cadence: CadencePreset = CadencePreset.NEVER,
     val howYouMet: String = "",
     val isSaving: Boolean = false
 ) {

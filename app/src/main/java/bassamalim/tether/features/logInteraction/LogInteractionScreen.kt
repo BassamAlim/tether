@@ -2,6 +2,8 @@ package bassamalim.tether.features.logInteraction
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
@@ -104,7 +107,9 @@ private fun SheetContent(
     onSave: () -> Unit
 ) {
     Column(
-        Modifier.padding(start = Spacing.screen, end = Spacing.screen, bottom = 28.dp)
+        Modifier
+            .verticalScroll(rememberScrollState())
+            .padding(start = Spacing.screen, end = Spacing.screen, bottom = 28.dp)
     ) {
         Text(text = "Log a catch-up", style = MaterialTheme.typography.titleMedium)
 
@@ -153,12 +158,13 @@ private fun SheetContent(
                 .padding(top = Spacing.screen)
                 .fillMaxWidth()
                 .height(52.dp)
-                .background(color = Action, shape = MaterialTheme.shapes.medium)
+                .clip(MaterialTheme.shapes.medium)
+                .background(color = Action)
                 .clickable(enabled = state.canSave, onClick = onSave),
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "Save — resets the clock",
+                text = "Save",
                 style = MaterialTheme.typography.labelLarge,
                 color = AccentInk
             )
@@ -261,10 +267,8 @@ private fun Segment(
     Box(
         modifier = modifier
             .height(40.dp)
-            .background(
-                color = if (selected) AccentWash else Color.Transparent,
-                shape = MaterialTheme.shapes.extraSmall
-            )
+            .clip(MaterialTheme.shapes.extraSmall)
+            .background(color = if (selected) AccentWash else Color.Transparent)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {

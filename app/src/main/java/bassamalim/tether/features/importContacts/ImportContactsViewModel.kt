@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import bassamalim.tether.core.models.DeviceContact
 import bassamalim.tether.core.nav.Navigator
-import bassamalim.tether.core.utils.cadenceAdjective
+import bassamalim.tether.core.utils.cadenceValueLabel
 import bassamalim.tether.core.utils.initials
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,8 +29,14 @@ class ImportContactsViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val cadence = cadenceAdjective(domain.defaultCadenceDays())
-            _uiState.update { it.copy(cadenceLabel = cadence) }
+            val days = domain.defaultCadenceDays()
+
+            _uiState.update {
+                it.copy(
+                    cadenceLabel = cadenceValueLabel(days).lowercase(),
+                    hasDefaultCadence = days != null
+                )
+            }
         }
     }
 

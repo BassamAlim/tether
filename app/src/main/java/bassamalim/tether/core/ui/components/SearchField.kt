@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import bassamalim.tether.core.ui.theme.Accent
@@ -33,7 +34,8 @@ fun SearchFieldButton(placeholder: String, onClick: () -> Unit, modifier: Modifi
         modifier = modifier
             .fillMaxWidth()
             .height(Sizes.field)
-            .background(color = Surface200, shape = MaterialTheme.shapes.medium)
+            .clip(MaterialTheme.shapes.medium)
+            .background(color = Surface200)
             .clickable(onClick = onClick)
             .padding(horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically,

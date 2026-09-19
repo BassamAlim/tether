@@ -21,7 +21,7 @@ private val Context.preferencesDataStore: DataStore<Preferences> by preferencesD
  * Everything Tether stores lives on the device: a Room database and a DataStore. There is no
  * server, which is exactly why the Settings screen has to be honest about backups.
  *
- * Repositories aren't listed here — they're `@Singleton class ... @Inject constructor`, so Hilt
+ * Repositories aren't listed here: they're `@Singleton class ... @Inject constructor`, so Hilt
  * builds them without a module.
  */
 @Module @InstallIn(SingletonComponent::class)

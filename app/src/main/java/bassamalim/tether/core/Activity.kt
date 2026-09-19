@@ -9,7 +9,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.fragment.app.FragmentActivity
@@ -47,7 +50,16 @@ class Activity : FragmentActivity() {
                 val startDestination by viewModel.startDestination.collectAsStateWithLifecycle()
 
                 // Nothing about your people is on screen before the start destination is known.
-                Box(Modifier.fillMaxSize().background(Surface0)) {
+                //
+                // safeDrawing keeps content out from under the status bar and gesture area.
+                // Applying it here consumes the insets, so the Scaffolds further down exclude
+                // what's already been applied rather than padding a second time.
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(Surface0)
+                        .windowInsetsPadding(WindowInsets.safeDrawing)
+                ) {
                     startDestination?.let {
                         Navigation(navigator = navigator, startDestination = withNudgeTarget(it))
                     }
@@ -57,7 +69,7 @@ class Activity : FragmentActivity() {
     }
 
     /**
-     * A nudge opens the app on Catch up — through the lock if there is one, never around it.
+     * A nudge opens the app on Catch up, through the lock if there is one, never around it.
      */
     private fun withNudgeTarget(destination: Screen): Screen {
         val fromNudge = intent?.getBooleanExtra(Nudges.EXTRA_OPEN_CATCH_UP, false) == true

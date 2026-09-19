@@ -5,6 +5,7 @@ import bassamalim.tether.core.data.dataSources.room.entities.PersonDetail
 import bassamalim.tether.core.data.repositories.InteractionsRepository
 import bassamalim.tether.core.data.repositories.PeopleRepository
 import bassamalim.tether.core.domain.TrackedPeople
+import bassamalim.tether.core.enums.RelationshipTag
 import bassamalim.tether.core.models.TrackedPerson
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
@@ -20,11 +21,16 @@ class PersonDomain @Inject constructor(
 
     fun observeDetails(id: Long): Flow<List<PersonDetail>> = peopleRepository.observeDetails(id)
 
-    /** Newest first, and never edited — you log, you don't curate. */
+    /** Newest first, and never edited: you log, you don't curate. */
     fun observeHistory(id: Long): Flow<List<Interaction>> =
         interactionsRepository.observeForPerson(id)
 
     fun today(): LocalDate = trackedPeople.today()
+
+    suspend fun setTag(id: Long, tag: RelationshipTag?) = peopleRepository.setTag(id, tag)
+
+    suspend fun setCadence(id: Long, cadenceDays: Int?) =
+        peopleRepository.setCadence(id, cadenceDays)
 
     suspend fun delete(id: Long) = peopleRepository.delete(id)
 }

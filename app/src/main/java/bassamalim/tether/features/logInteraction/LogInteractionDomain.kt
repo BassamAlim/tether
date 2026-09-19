@@ -18,7 +18,7 @@ class LogInteractionDomain @Inject constructor(
     fun today(): LocalDate = trackedPeople.today()
 
     /**
-     * Saving resets the clock from the interaction's own date, not from now — backfilling last
+     * Saving resets the clock from the interaction's own date, not from now: backfilling last
      * Tuesday's coffee shouldn't buy an extra week.
      */
     suspend fun log(

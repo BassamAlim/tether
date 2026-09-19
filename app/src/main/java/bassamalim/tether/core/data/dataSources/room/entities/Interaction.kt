@@ -25,7 +25,7 @@ data class Interaction(
     val personId: Long,
     val type: InteractionType? = null,
     /**
-     * The day it happened, not the day it was logged — backfilling last Tuesday's coffee
+     * The day it happened, not the day it was logged: backfilling last Tuesday's coffee
      * shouldn't buy an extra week.
      */
     val occurredOn: LocalDate,

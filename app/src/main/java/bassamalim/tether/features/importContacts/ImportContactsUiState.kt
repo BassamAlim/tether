@@ -10,6 +10,7 @@ data class ImportContactsUiState(
     val contacts: List<ContactRow> = emptyList(),
     val selectedCount: Int = 0,
     val cadenceLabel: String = "",
+    val hasDefaultCadence: Boolean = false,
     val isImporting: Boolean = false
 ) {
     val canImport get() = selectedCount > 0 && !isImporting

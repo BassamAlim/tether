@@ -11,7 +11,7 @@ import java.time.temporal.ChronoUnit
  */
 sealed interface DueState {
 
-    /** Cadence is "Never" — the person is out of Catch up and out of the slipping section. */
+    /** Cadence is "Never": the person is out of Catch up and out of the slipping section. */
     data object NotTracked : DueState
 
     /** Still inside the cadence. */

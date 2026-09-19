@@ -4,6 +4,7 @@ import bassamalim.tether.core.data.dataSources.room.daos.PeopleDao
 import bassamalim.tether.core.data.dataSources.room.entities.Person
 import bassamalim.tether.core.data.dataSources.room.entities.PersonDetail
 import bassamalim.tether.core.data.dataSources.room.relations.PersonWithLastInteraction
+import bassamalim.tether.core.enums.RelationshipTag
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -32,6 +33,10 @@ class PeopleRepository @Inject constructor(
 
     suspend fun getAllDetails(): List<PersonDetail> = peopleDao.getAllDetails()
 
+    suspend fun setTag(id: Long, tag: RelationshipTag?) = peopleDao.updateTag(id, tag)
+
+    suspend fun setCadence(id: Long, cadenceDays: Int?) = peopleDao.updateCadence(id, cadenceDays)
+
     suspend fun save(person: Person): Long = peopleDao.upsert(person)
 
     suspend fun create(person: Person, details: List<PersonDetail> = emptyList()): Long =
@@ -43,7 +48,4 @@ class PeopleRepository @Inject constructor(
     suspend fun delete(person: Person) = peopleDao.delete(person)
 
     suspend fun delete(id: Long) = peopleDao.deleteById(id)
-
-    /** Deleting people cascades to their details and history — it empties the app. */
-    suspend fun deleteAll() = peopleDao.deleteAll()
 }

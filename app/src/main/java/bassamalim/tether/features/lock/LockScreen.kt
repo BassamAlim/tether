@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -51,7 +52,7 @@ fun LockScreen(viewModel: LockViewModel = hiltViewModel()) {
 
     val unlock = {
         if (activity == null || !activity.canAuthenticate()) {
-            // A phone with no screen lock at all must still open — you can never lock yourself out.
+            // A phone with no screen lock at all must still open: you can never lock yourself out.
             viewModel.onUnlocked()
         }
         else {
@@ -107,7 +108,8 @@ private fun LockScreen(onUnlockClick: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp)
-                .background(color = Action, shape = MaterialTheme.shapes.medium)
+                .clip(MaterialTheme.shapes.medium)
+                .background(color = Action)
                 .clickable(onClick = onUnlockClick),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)

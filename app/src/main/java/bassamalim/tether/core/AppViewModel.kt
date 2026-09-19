@@ -17,7 +17,7 @@ import javax.inject.Inject
  * Decides which door the app opens on: the lock if it's enabled, the one-screen explanation if
  * there's nobody in here yet, otherwise People.
  *
- * Decided once, from the first values — the graph's start destination must not move under the
+ * Decided once, from the first values: the graph's start destination must not move under the
  * user because they added their first person.
  */
 @HiltViewModel

@@ -15,12 +15,10 @@ data class SettingsUiState(
     val defaultCadenceLabel: String = "",
     val version: String = "",
     val isPickingSchedule: Boolean = false,
-    val isPickingCadence: Boolean = false,
-    val isConfirmingWipe: Boolean = false
+    val isPickingCadence: Boolean = false
 )
 
 /** One-shot outcomes the screen reports and then forgets. */
 sealed interface SettingsEvent {
     data class BackupWritten(val succeeded: Boolean) : SettingsEvent
-    data object EverythingDeleted : SettingsEvent
 }

@@ -106,6 +106,16 @@ These are decided; don't re-litigate them in code.
   log, and every one-tap write offers undo.
 - **Import is a picker, not a sync.** `READ_CONTACTS` is requested when the button is tapped,
   people are copied once, and Tether never writes back to the address book.
+- **The message button opens WhatsApp**, not SMS: it hands WhatsApp the raw number first (so
+  WhatsApp matches the contact itself), falls back to `wa.me` with the number in international
+  form, and only then to SMS. `com.whatsapp` is declared in the manifest's `<queries>` or
+  `setPackage` could never resolve on Android 11+.
+- **The default cadence is "Never"** (`PreferencesRepository`, stored as -1 since DataStore has
+  no null). New and imported people arrive untracked and are opted in per person, rather than
+  the app nagging about everyone you added. Settings offers Never among the defaults.
+- **One relationship tag per person** (`RelationshipTag`), chosen on New person and changeable
+  later by tapping the chip on Person detail. The design offers five; `UNIVERSITY` is a sixth,
+  added on request. People's filter chips stay as designed (All / Slipping / Close / Work).
 - **Person details are free-form label/value rows** (`PersonDetail`: "Met", "Works at",
   "Kids"), not fixed columns — what's worth remembering differs per person. Interaction notes are
   separate, and search covers names, details and notes.
@@ -127,6 +137,11 @@ These are decided; don't re-litigate them in code.
 Every designed screen is built: **People**, **New person**, **Catch up** (one-tap log and undo
 bar), **Person detail**, **Log a catch-up**, **Search**, **Settings**, **First run**, **From
 contacts** and **Locked**.
+
+Relationship and cadence can both be changed from Person detail by tapping the chip or the
+cadence line. Name, phone and details are still set-once at creation, and New person collects
+no phone number at all, so the WhatsApp button only lights up for people brought in from
+contacts. An edit flow for the rest is the obvious next gap.
 
 Missing: per-person reminders (the bell on Person detail is deliberately disabled), and photos
 (`Person` has no photo column, so the New person screen's photo button is inert). Backup export

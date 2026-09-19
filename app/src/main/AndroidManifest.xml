@@ -9,6 +9,12 @@
     <!-- BiometricPrompt on cold start, with device credential as the fallback. -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
+    <!-- Package visibility: without this, setPackage("com.whatsapp") can never resolve. -->
+    <queries>
+        <package android:name="com.whatsapp" />
+        <package android:name="com.whatsapp.w4b" />
+    </queries>
+
     <application
         android:name=".App"
         android:allowBackup="true"

@@ -28,6 +28,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
@@ -126,7 +127,7 @@ private fun ImportContactsScreen(
 
             Text(
                 text = "Tick only the people you actually want to keep up with. Tether copies " +
-                        "them once — it never syncs, and never writes back to your contacts.",
+                        "them once. It never syncs, and never writes back to your contacts.",
                 style = MaterialTheme.typography.bodySmall,
                 color = InkMuted,
                 modifier = Modifier.padding(top = 14.dp, start = Spacing.screen, end = Spacing.screen)
@@ -200,7 +201,7 @@ private fun PermissionNotice(isDenied: Boolean, onRequestPermission: () -> Unit)
         Text(
             text =
                 if (isDenied) "Tether can't read your contacts without permission. " +
-                        "It only reads them — nothing is ever written back."
+                        "It only reads them. Nothing is ever written back."
                 else "Asking for access to your contacts…",
             style = MaterialTheme.typography.bodyMedium,
             color = InkMuted,
@@ -211,7 +212,8 @@ private fun PermissionNotice(isDenied: Boolean, onRequestPermission: () -> Unit)
             Box(
                 modifier = Modifier
                     .height(52.dp)
-                    .background(color = Action, shape = MaterialTheme.shapes.medium)
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(color = Action)
                     .clickable(onClick = onRequestPermission)
                     .padding(horizontal = Spacing.xl),
                 contentAlignment = Alignment.Center
@@ -232,10 +234,8 @@ private fun ContactRow(contact: ContactRow, onClick: () -> Unit) {
         modifier = Modifier
             .padding(horizontal = Spacing.md, vertical = 1.dp)
             .fillMaxWidth()
-            .background(
-                color = if (contact.isSelected) Surface100 else Color.Transparent,
-                shape = MaterialTheme.shapes.medium
-            )
+            .clip(MaterialTheme.shapes.medium)
+            .background(color = if (contact.isSelected) Surface100 else Color.Transparent)
             .clickable(onClick = onClick)
             .padding(horizontal = Spacing.sm, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -305,8 +305,12 @@ private fun BottomBar(state: ImportContactsUiState, onImport: () -> Unit) {
 
         Column(Modifier.padding(start = Spacing.screen, end = Spacing.screen, top = Spacing.lg, bottom = 28.dp)) {
             Text(
-                text = "They'll start on your default cadence — ${state.cadenceLabel} — and you " +
-                        "can change any of them afterwards.",
+                text =
+                    if (state.hasDefaultCadence)
+                        "They'll start on your default cadence (${state.cadenceLabel}), and " +
+                                "you can change any of them afterwards."
+                    else "They'll start without a cadence, so Tether won't nudge you about " +
+                            "them until you set one.",
                 style = TetherType.Caption,
                 color = InkFaint
             )
@@ -316,10 +320,8 @@ private fun BottomBar(state: ImportContactsUiState, onImport: () -> Unit) {
                     .padding(top = Spacing.md)
                     .fillMaxWidth()
                     .height(52.dp)
-                    .background(
-                        color = if (state.canImport) Action else Surface100,
-                        shape = MaterialTheme.shapes.medium
-                    )
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(color = if (state.canImport) Action else Surface100)
                     .clickable(enabled = state.canImport, onClick = onImport),
                 contentAlignment = Alignment.Center
             ) {

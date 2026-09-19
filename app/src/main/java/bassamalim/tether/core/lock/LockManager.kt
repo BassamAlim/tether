@@ -12,7 +12,7 @@ import javax.inject.Singleton
  * When the app should ask who you are.
  *
  * Cold start always asks. After that it asks again only once you've been away for
- * [GRACE_MILLIS] — a quick hop to a messaging app and back doesn't re-prompt, so texting someone
+ * [GRACE_MILLIS]: a quick hop to a messaging app and back doesn't re-prompt, so texting someone
  * and then logging it stays one flow.
  */
 @Singleton

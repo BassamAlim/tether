@@ -10,7 +10,7 @@ data class NudgeCopy(val title: String, val body: String)
 data class SlippingPerson(val name: String, val daysOverdue: Long, val cadenceDays: Int?)
 
 /**
- * The nudge names people instead of counting them — it's the highest-leverage copy in the app,
+ * The nudge names people instead of counting them: it's the highest-leverage copy in the app,
  * because most weeks you meet Tether here rather than by opening it.
  */
 fun nudgeCopy(slipping: List<SlippingPerson>): NudgeCopy {

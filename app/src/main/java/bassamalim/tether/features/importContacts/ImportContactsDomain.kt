@@ -19,11 +19,11 @@ class ImportContactsDomain @Inject constructor(
 
     suspend fun readContacts(): List<DeviceContact> = contactsRepository.read()
 
-    suspend fun defaultCadenceDays(): Int = preferencesRepository.observeDefaultCadenceDays().first()
+    suspend fun defaultCadenceDays(): Int? = preferencesRepository.observeDefaultCadenceDays().first()
 
     /**
      * Imported people start on the default cadence so the flow stays two taps; tuning happens
-     * per person afterwards.
+     * per person afterwards. That default may be "Never", in which case they are simply added.
      */
     suspend fun import(contacts: List<DeviceContact>) {
         val cadenceDays = defaultCadenceDays()

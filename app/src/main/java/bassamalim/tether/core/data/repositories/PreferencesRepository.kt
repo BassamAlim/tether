@@ -51,13 +51,16 @@ class PreferencesRepository @Inject constructor(
         dataStore.edit { it[NUDGE_MINUTE_OF_DAY] = time.toSecondOfDay() / 60 }
     }
 
-    /** Imported people start here, so the import flow stays two taps. */
-    fun observeDefaultCadenceDays(): Flow<Int> = dataStore.data.map {
-        it[DEFAULT_CADENCE_DAYS] ?: DEFAULT_CADENCE
+    /**
+     * What new people start on, imported ones included. Null is "Never": they are added without
+     * a cadence and nothing nudges you about them until you give them one.
+     */
+    fun observeDefaultCadenceDays(): Flow<Int?> = dataStore.data.map { preferences ->
+        (preferences[DEFAULT_CADENCE_DAYS] ?: NEVER).takeIf { it != NEVER }
     }
 
-    suspend fun setDefaultCadenceDays(days: Int) {
-        dataStore.edit { it[DEFAULT_CADENCE_DAYS] = days }
+    suspend fun setDefaultCadenceDays(days: Int?) {
+        dataStore.edit { it[DEFAULT_CADENCE_DAYS] = days ?: NEVER }
     }
 
     fun observeLockEnabled(): Flow<Boolean> = dataStore.data.map { it[LOCK_ENABLED] ?: true }
@@ -76,7 +79,7 @@ class PreferencesRepository @Inject constructor(
 
         /** 10:00 on the nudge day. */
         private const val DEFAULT_NUDGE_MINUTE = 10 * 60
-        /** "Month" — the preset the New person screen preselects. */
-        private const val DEFAULT_CADENCE = 30
+        /** DataStore has no null, so "Never" is stored as this. */
+        private const val NEVER = -1
     }
 }

@@ -1,18 +1,25 @@
 package bassamalim.tether.features.person
 
+import bassamalim.tether.core.enums.CadencePreset
+import bassamalim.tether.core.enums.RelationshipTag
+
 data class PersonUiState(
     val isLoading: Boolean = true,
     val id: Long = 0,
     val name: String = "",
     val initials: String = "",
+    val tag: RelationshipTag? = null,
     val tagLabel: String? = null,
+    val cadence: CadencePreset = CadencePreset.MONTH,
     val cadenceLabel: String = "",
-    /** "Last talked 7 weeks ago — 5 weeks overdue". */
+    /** "Last talked 7 weeks ago, 5 weeks overdue". */
     val status: String = "",
     val isOverdue: Boolean = false,
     val phone: String? = null,
     val details: List<DetailRow> = emptyList(),
     val history: List<HistoryEntry> = emptyList(),
+    val isPickingTag: Boolean = false,
+    val isPickingCadence: Boolean = false,
     val isMenuOpen: Boolean = false,
     val isConfirmingDelete: Boolean = false
 ) {

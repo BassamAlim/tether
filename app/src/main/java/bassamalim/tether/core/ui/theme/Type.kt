@@ -32,7 +32,7 @@ val PlusJakartaSans = FontFamily(
  * Named styles that have no sensible Material slot live in [TetherType].
  */
 val Typography = Typography(
-    // display-lg — the Tether wordmark; big empty-state numbers.
+    // display-lg: the Tether wordmark; big empty-state numbers.
     displaySmall = TextStyle(
         fontFamily = PlusJakartaSans,
         fontWeight = FontWeight(800),
@@ -40,7 +40,7 @@ val Typography = Typography(
         lineHeight = 40.sp,
         letterSpacing = (-0.02).em
     ),
-    // display-md — screen titles, e.g. "People", "Reminders".
+    // display-md: screen titles, e.g. "People", "Reminders".
     headlineMedium = TextStyle(
         fontFamily = PlusJakartaSans,
         fontWeight = FontWeight(800),
@@ -48,42 +48,42 @@ val Typography = Typography(
         lineHeight = 32.sp,
         letterSpacing = (-0.01).em
     ),
-    // title — contact names in a list; card and section headers.
+    // title: contact names in a list; card and section headers.
     titleMedium = TextStyle(
         fontFamily = PlusJakartaSans,
         fontWeight = FontWeight(700),
         fontSize = 17.sp,
         lineHeight = 22.sp
     ),
-    // body — notes, contact details, descriptions.
+    // body: notes, contact details, descriptions.
     bodyMedium = TextStyle(
         fontFamily = PlusJakartaSans,
         fontWeight = FontWeight(500),
         fontSize = 15.sp,
         lineHeight = 21.sp
     ),
-    // body-secondary — the second line under a title; helper text under a field.
+    // body-secondary: the second line under a title; helper text under a field.
     bodySmall = TextStyle(
         fontFamily = PlusJakartaSans,
         fontWeight = FontWeight(500),
         fontSize = 13.sp,
         lineHeight = 18.sp
     ),
-    // button — the label inside a primary or secondary button.
+    // button: the label inside a primary or secondary button.
     labelLarge = TextStyle(
         fontFamily = PlusJakartaSans,
         fontWeight = FontWeight(700),
         fontSize = 15.sp,
         lineHeight = 20.sp
     ),
-    // chip — filter chips, segmented controls, selectable pills.
+    // chip: filter chips, segmented controls, selectable pills.
     labelMedium = TextStyle(
         fontFamily = PlusJakartaSans,
         fontWeight = FontWeight(600),
         fontSize = 13.sp,
         lineHeight = 18.sp
     ),
-    // label — uppercase eyebrows and relationship chips, e.g. "CLOSE FRIEND".
+    // label: uppercase eyebrows and relationship chips, e.g. "CLOSE FRIEND".
     labelSmall = TextStyle(
         fontFamily = PlusJakartaSans,
         fontWeight = FontWeight(700),
@@ -96,7 +96,7 @@ val Typography = Typography(
 /** Design-system styles with no Material slot of their own. */
 object TetherType {
 
-    /** caption — small captions and inline hints. */
+    /** caption: small captions and inline hints. */
     val Caption = TextStyle(
         fontFamily = PlusJakartaSans,
         fontWeight = FontWeight(600),
@@ -104,7 +104,7 @@ object TetherType {
         lineHeight = 16.sp
     )
 
-    /** timestamp — right-aligned metadata in a list row, e.g. "3d ago". */
+    /** timestamp: right-aligned metadata in a list row, e.g. "3d ago". */
     val Timestamp = TextStyle(
         fontFamily = PlusJakartaSans,
         fontWeight = FontWeight(600),

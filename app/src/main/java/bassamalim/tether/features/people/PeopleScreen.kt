@@ -17,12 +17,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import bassamalim.tether.core.ui.components.Avatar
 import bassamalim.tether.core.ui.components.FilterPill
+import bassamalim.tether.core.ui.components.InfoChip
 import bassamalim.tether.core.ui.components.SearchFieldButton
 import bassamalim.tether.core.ui.components.SectionLabel
 import bassamalim.tether.core.ui.components.TagChip
@@ -147,10 +149,8 @@ private fun PersonRow(person: PersonListItem, onClick: () -> Unit) {
         modifier = Modifier
             .padding(horizontal = Spacing.md, vertical = Spacing.xxs)
             .fillMaxWidth()
-            .background(
-                color = if (person.isSlipping) Surface100 else Color.Transparent,
-                shape = MaterialTheme.shapes.medium
-            )
+            .clip(MaterialTheme.shapes.medium)
+            .background(color = if (person.isSlipping) Surface100 else Color.Transparent)
             .clickable(onClick = onClick)
             .padding(horizontal = Spacing.sm, vertical = Spacing.md),
         verticalAlignment = Alignment.CenterVertically,
@@ -168,11 +168,7 @@ private fun PersonRow(person: PersonListItem, onClick: () -> Unit) {
             ) {
                 person.tag?.let { TagChip(label = it.chipLabel) }
 
-                Text(
-                    text = person.cadenceLabel,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = InkFaint
-                )
+                InfoChip(label = person.cadenceLabel)
             }
         }
 

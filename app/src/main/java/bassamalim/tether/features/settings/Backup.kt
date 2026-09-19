@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 /**
  * The shape of an exported backup. With no server, this file is the only copy of your archive
- * that survives a lost phone, so it's plain readable JSON rather than a database dump — it
+ * that survives a lost phone, so it's plain readable JSON rather than a database dump; it
  * should still be openable in ten years by something that isn't Tether.
  */
 @Serializable

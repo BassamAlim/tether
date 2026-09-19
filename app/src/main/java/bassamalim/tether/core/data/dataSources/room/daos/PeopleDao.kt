@@ -9,6 +9,7 @@ import androidx.room.Upsert
 import bassamalim.tether.core.data.dataSources.room.entities.Person
 import bassamalim.tether.core.data.dataSources.room.entities.PersonDetail
 import bassamalim.tether.core.data.dataSources.room.relations.PersonWithLastInteraction
+import bassamalim.tether.core.enums.RelationshipTag
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -73,6 +74,12 @@ interface PeopleDao {
     @Upsert
     suspend fun upsertAll(people: List<Person>)
 
+    @Query("UPDATE people SET tag = :tag WHERE id = :id")
+    suspend fun updateTag(id: Long, tag: RelationshipTag?)
+
+    @Query("UPDATE people SET cadenceDays = :cadenceDays WHERE id = :id")
+    suspend fun updateCadence(id: Long, cadenceDays: Int?)
+
     @Insert
     suspend fun insertDetails(details: List<PersonDetail>)
 
@@ -96,10 +103,7 @@ interface PeopleDao {
     @Query("SELECT * FROM person_details ORDER BY personId, position")
     suspend fun getAllDetails(): List<PersonDetail>
 
-    /** Cascades to the person's details and history — the whole record goes. */
+    /** Cascades to the person's details and history; the whole record goes. */
     @Query("DELETE FROM people WHERE id = :id")
     suspend fun deleteById(id: Long)
-
-    @Query("DELETE FROM people")
-    suspend fun deleteAll()
 }

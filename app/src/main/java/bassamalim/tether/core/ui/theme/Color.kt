@@ -4,10 +4,10 @@ import androidx.compose.ui.graphics.Color
 
 /**
  * The Tether palette, straight from the design system's tokens. There is one theme and it is
- * dark — no light variant, no dynamic color.
+ * dark: no light variant, no dynamic color.
  */
 
-/** App background — the base canvas behind every screen. */
+/** App background: the base canvas behind every screen. */
 val Surface0 = Color(0xFF0A0A0A)
 /** List rows and cards at rest. */
 val Surface100 = Color(0xFF141414)
@@ -25,20 +25,20 @@ val InkFaint = Color(0xFF888888)
 
 /**
  * The one accent color in the system: primary actions, active states, and "needs attention"
- * signals. Use once per screen — it works because it's rare.
+ * signals. Use once per screen: it works because it's rare.
  */
 val Accent = Color(0xFFD8FF3D)
 /** Text and icons sitting on an accent-filled surface, e.g. the plus inside the FAB. */
 val AccentInk = Color(0xFF0A0A0A)
-/** Tinted background for accent chips, badges and selected rows — rgba(216,255,61,0.14). */
+/** Tinted background for accent chips, badges and selected rows, rgba(216,255,61,0.14). */
 val AccentWash = Color(0x24D8FF3D)
 
 /** Destructive actions and error states. */
 val Danger = Color(0xFFFF6B6B)
-/** Background for destructive confirmations and inline errors — rgba(255,107,107,0.14). */
+/** Background for destructive confirmations and inline errors, rgba(255,107,107,0.14). */
 val DangerWash = Color(0x24FF6B6B)
 
-/** Scrim behind a bottom sheet or modal — rgba(0,0,0,0.6). */
+/** Scrim behind a bottom sheet or modal, rgba(0,0,0,0.6). */
 val Overlay = Color(0x99000000)
 
 /**

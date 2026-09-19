@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
@@ -116,7 +117,7 @@ private fun SearchScreen(
         if (state.isEmpty) {
             item {
                 Text(
-                    text = "Nothing matches \"${state.query}\" — not a name, a detail, or a note.",
+                    text = "Nothing matches \"${state.query}\": not a name, a detail, or a note.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = InkFaint,
                     modifier = Modifier.padding(Spacing.xxl)
@@ -204,7 +205,8 @@ private fun SearchBar(
                 Box(
                     modifier = Modifier
                         .size(36.dp)
-                        .background(color = Surface300, shape = Pill)
+                        .clip(Pill)
+                        .background(color = Surface300)
                         .clickable(onClick = onClear),
                     contentAlignment = Alignment.Center
                 ) {
@@ -254,7 +256,8 @@ private fun NoteRow(note: NoteResult, query: String, onClick: () -> Unit) {
         modifier = Modifier
             .padding(horizontal = Spacing.md, vertical = Spacing.xxs)
             .fillMaxWidth()
-            .background(color = Surface100, shape = MaterialTheme.shapes.medium)
+            .clip(MaterialTheme.shapes.medium)
+            .background(color = Surface100)
             .clickable(onClick = onClick)
             .padding(horizontal = Spacing.sm, vertical = Spacing.md),
         horizontalArrangement = Arrangement.spacedBy(Spacing.md)

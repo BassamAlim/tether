@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -168,10 +169,8 @@ private fun CatchUpRow(item: CatchUpItem, onClick: () -> Unit, onReachedOut: () 
         modifier = Modifier
             .padding(horizontal = Spacing.md, vertical = Spacing.xxs)
             .fillMaxWidth()
-            .background(
-                color = if (item.isOverdue) Surface100 else Color.Transparent,
-                shape = MaterialTheme.shapes.medium
-            )
+            .clip(MaterialTheme.shapes.medium)
+            .background(color = if (item.isOverdue) Surface100 else Color.Transparent)
             .padding(horizontal = Spacing.sm, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
@@ -201,7 +200,8 @@ private fun CatchUpRow(item: CatchUpItem, onClick: () -> Unit, onReachedOut: () 
         Box(
             modifier = Modifier
                 .size(Sizes.avatar)
-                .background(color = Surface200, shape = Pill)
+                .clip(Pill)
+                .background(color = Surface200)
                 .clickable(onClick = onReachedOut),
             contentAlignment = Alignment.Center
         ) {
