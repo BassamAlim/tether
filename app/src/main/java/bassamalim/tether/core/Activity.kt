@@ -17,15 +17,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import bassamalim.tether.core.di.ApplicationScope
 import bassamalim.tether.core.lock.LockManager
 import bassamalim.tether.core.nav.Navigation
 import bassamalim.tether.core.nav.Navigator
 import bassamalim.tether.core.nav.Screen
+import bassamalim.tether.core.nudge.NudgeScheduler
 import bassamalim.tether.core.nudge.Nudges
+import bassamalim.tether.core.reminder.ReminderScheduler
 import bassamalim.tether.core.reminder.Reminders
 import bassamalim.tether.core.ui.theme.Surface0
 import bassamalim.tether.core.ui.theme.TetherTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /** A [FragmentActivity] because that's what BiometricPrompt attaches to. */
@@ -34,6 +39,9 @@ class Activity : FragmentActivity() {
 
     @Inject lateinit var navigator: Navigator
     @Inject lateinit var lockManager: LockManager
+    @Inject lateinit var nudgeScheduler: NudgeScheduler
+    @Inject lateinit var reminderScheduler: ReminderScheduler
+    @Inject @field:ApplicationScope lateinit var scope: CoroutineScope
 
     private val viewModel: AppViewModel by viewModels()
 
@@ -45,6 +53,18 @@ class Activity : FragmentActivity() {
         )
 
         super.onCreate(savedInstanceState)
+
+        // Re-books the nudge and every pending reminder, so they survive a force-stop, a restore
+        // onto a new phone, or a clock the user moved.
+        //
+        // It hangs off opening the app rather than off the process starting, because both schedulers
+        // enqueue with REPLACE: a process that WorkManager started *to run one of these workers*
+        // would re-book first and cancel the very notification it had woken up to post. That is
+        // why the nudge and the reminders only ever arrived while the app was already open.
+        scope.launch {
+            nudgeScheduler.sync()
+            reminderScheduler.syncAll()
+        }
 
         setContent {
             TetherTheme {

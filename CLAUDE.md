@@ -229,8 +229,9 @@ These are decided; don't re-litigate them in code.
   set or it isn't; setting a new one replaces it. **A reminder is spent when it arrives**: the
   worker posts it and deletes the row, so nothing quietly re-reminds you. It is stored as wall
   clock, not an instant, so seven in the evening survives a flight, and it is booked as one-time
-  work named `reminder_<personId>`, re-synced on every launch (`ReminderScheduler.syncAll()`) for
-  the cases WorkManager can't survive on its own. Notifications live on their own channel, so you
+  work named `reminder_<personId>`, re-synced whenever the app is opened
+  (`ReminderScheduler.syncAll()`, from `Activity`) for the cases WorkManager can't survive on
+  its own. Notifications live on their own channel, so you
   can keep the reminders you asked for and refuse the standing nudge. Tapping one opens the app
   on that person — pushed on top of the tabs, through the lock if one is set, never around it.
   Reminders are deliberately **not** in the backup: they're pending intentions, not the archive.
@@ -315,8 +316,14 @@ one is caught by the reader a moment later. A file from a later format is refuse
 half-read.
 
 The weekly nudge is built: `App` supplies Hilt's `HiltWorkerFactory` to WorkManager (so the
-manifest removes `WorkManagerInitializer`), `NudgeScheduler.sync()` runs on every launch and
-whenever the nudge settings change, and `NudgeActionReceiver` handles "Tomorrow".
+manifest removes `WorkManagerInitializer`), `NudgeScheduler.sync()` runs whenever the app is
+opened and whenever the nudge settings change, and `NudgeActionReceiver` handles "Tomorrow".
+
+Both re-syncs hang off `Activity`, not `App.onCreate`, and have to: they enqueue with
+`REPLACE`, and `App.onCreate` runs in *every* process start — including the one WorkManager
+starts in order to run `NudgeWorker` or `ReminderWorker`. Re-booking from there cancelled the
+very worker the process had woken up for, which is why notifications only ever arrived while
+the app was already open.
 
 The launcher icon comes from the design's own app-icon asset: a 108x108 tile with the mark at
 `translate(18 18) scale(0.75)` — 44% of the tile. Android shows only the inner 72dp of the
