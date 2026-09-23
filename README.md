@@ -1,10 +1,20 @@
-# Tether
+<p align="center">
+  <img src="docs/images/logo.svg" width="96" alt="Tether logo" />
+</p>
 
-**A personal CRM for Android.** The people you care about, how often you mean to reach out,
-and whether you're slipping.
+<h1 align="center">Tether</h1>
+
+<p align="center">
+  <b>A personal CRM for Android.</b><br />
+  The people you care about, how often you mean to reach out, and whether you're slipping.
+</p>
 
 Tether is offline-first by design: no account, no server, no sync. Everything about a person
 and every catch-up stays on your phone.
+
+![People, Catch up, Person detail and Log a catch-up](docs/images/screens.png)
+
+<sub>Screens from the app's design. The app itself has moved on a little since, and now also has a Circle tab.</sub>
 
 ## Features
 
