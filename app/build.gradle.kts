@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -7,6 +8,16 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
 }
+
+/**
+ * Signing comes from a `.env` at the repo root (written by CI from repository secrets, or by
+ * hand locally). Without one, debug builds use the machine's debug key and release is unsigned.
+ */
+val envProperties = Properties().apply {
+    providers.fileContents(rootProject.layout.projectDirectory.file(".env")).asText.orNull
+        ?.let { load(it.reader()) }
+}
+val hasReleaseKeystore = !envProperties.getProperty("KEYSTORE_PATH").isNullOrBlank()
 
 android {
     namespace = "bassamalim.tether"
@@ -24,11 +35,27 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            if (hasReleaseKeystore) {
+                storeFile = file(envProperties.getProperty("KEYSTORE_PATH"))
+                storePassword = envProperties.getProperty("KEYSTORE_PASSWORD", "")
+                keyAlias = envProperties.getProperty("KEY_ALIAS", "")
+                keyPassword = envProperties.getProperty("KEY_PASSWORD", "")
+            }
+        }
+    }
+
     buildTypes {
+        debug {
+            // The owner's own key, so local and CI builds install over each other.
+            if (hasReleaseKeystore) signingConfig = signingConfigs.getByName("release")
+        }
         release {
             optimization {
                 enable = false
             }
+            signingConfig = if (hasReleaseKeystore) signingConfigs.getByName("release") else null
         }
     }
     compileOptions {
